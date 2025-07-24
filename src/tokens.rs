@@ -259,7 +259,7 @@ macro_rules! expect_char {
     };
 }
 
-pub(crate) fn tokenize(file: String) -> Result<VecDeque<TokenContainer>, ParsingError> {
+pub fn tokenize(file: String) -> Result<VecDeque<TokenContainer>, ParsingError> {
     let mut tokens: VecDeque<TokenContainer> = VecDeque::new();
 
     let mut file_ch = CharsIterator {

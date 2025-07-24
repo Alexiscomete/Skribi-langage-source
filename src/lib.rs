@@ -8,12 +8,12 @@ use crate::tokens::tokenize;
 use crate::utils::clear;
 
 pub mod execute;
-mod get_file_content;
-mod parse;
+pub mod get_file_content;
+pub mod parse;
 mod skr_errors;
 #[cfg(test)]
 mod tests;
-mod tokens;
+pub mod tokens;
 mod utils;
 
 const FLAG_CHAR: &str = "--";
