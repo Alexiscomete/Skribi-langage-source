@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 
 use chumsky::error::Rich;
-use log::{info, trace, warn, debug};
-use miette::{Context, Diagnostic, LabeledSpan, NamedSource, Result, SourceSpan, Report};
+use log::{debug, info, trace, warn};
+use miette::{Context, Diagnostic, LabeledSpan, NamedSource, Report, Result, SourceSpan};
 use thiserror::Error;
 
 use crate::{
