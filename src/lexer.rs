@@ -2,6 +2,11 @@ use std::fmt::{Display, Formatter};
 
 use logos::{Logos, SpannedIter};
 
+// NOTE: logos is smart: like CSS, it calculates a priority score based on the
+// specificity of the rule. "token" has the priority over anything else. Then,
+// regex, with complicated rules. Sometimes, the priority argument can be used
+// to avoid confusions.
+
 #[derive(Logos, Clone, PartialEq, Debug)]
 pub enum Tokens<'src> {
     /// Names: variables, functions, ...
@@ -12,14 +17,12 @@ pub enum Tokens<'src> {
     #[token("skr_app")]
     NativeCall,
 
-    /// Just a (
     #[token("(")]
     LeftParenthesis,
-    /// Just a )
     #[token(")")]
     RightParenthesis,
 
-    /// Anything that is skipped
+    /// Note: no need of them in parsing
     #[regex(r"[ \t\n]+", logos::skip)]
     Ignore,
 
