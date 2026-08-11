@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use log::{debug, info, trace};
+use log::{debug, info, trace, warn};
 use miette::{Context, LabeledSpan, Result, Severity, miette};
 
 use crate::{file::File, lexer::tokenise};
@@ -38,7 +38,8 @@ impl Source<'_> {
                 "Found deprecated skr_app"
             )
             .with_source_code(self.file.create_source());
-            return Err(error);
+
+            warn!("Warning: {:?}", error);
         }
         todo!("Finish execution (not the point for now)")
     }
