@@ -1,7 +1,8 @@
 use std::collections::HashMap;
 
 use chumsky::error::Rich;
-use log::{info, trace};
+use log::debug;
+use log::{info, trace, warn};
 use miette::{Context, Diagnostic, LabeledSpan, NamedSource, Result, Severity, SourceSpan, miette};
 use thiserror::Error;
 
@@ -45,7 +46,7 @@ fn convert_to_err(file: &File<'_>, errs: Vec<Rich<'_, Tokens<'_>>>) -> ParsingEr
     // Greatly inspired from
     // https://codeberg.org/zesterer/chumsky/src/branch/main/examples/nano_rust.rs
     ParsingErrors {
-        src: file.into_named(),
+        src: file.create_source(),
         related: errs
             .iter()
             .map(|err| ParsingSingleError {
@@ -72,9 +73,13 @@ impl Source<'_> {
         let tokens = tokenise(&file.content);
         let size = tokens.size_hint();
         info!(
+            // In general, 0 is detected as we have an indefinite size
+            // The tokens are parsed on demand I suppose
             "File `{}` splitted into at least {} tokens",
             file.name, size.0,
         );
+
+        // Not able to log tokens without consuming them (ownership)
         let result = parse(tokens, file.content.len());
         match result {
             Ok(root) => Ok(Source { file, root }),
@@ -82,7 +87,7 @@ impl Source<'_> {
         }
     }
 
-    pub fn execute(&self) -> Result<()> {
+    pub fn compile(&self) -> Result<()> {
         // Placeholder for later checks
         // May be moved later to the new function
         // Only do not do too much on a pull request
@@ -92,8 +97,9 @@ impl Source<'_> {
                 labels = vec![LabeledSpan::at(index..(index + 7), "There"),],
                 "Found deprecated skr_app"
             )
-            .with_source_code(self.file.into_named());
-            return Err(error);
+            .with_source_code(self.file.create_source());
+
+            warn!("Warning: {:?}", error);
         }
         todo!("Finish execution (not the point for now)")
     }
@@ -111,24 +117,20 @@ impl<'manager> SourceManager<'manager> {
     }
 
     pub fn add_file<'file: 'manager>(&mut self, file: &'file File<'file>) -> Result<()> {
-        info!("Adding file {} into source files", file.name);
+        debug!("Adding file {} into source files", file.name);
         self.files.insert(file.name, Source::new(file)?);
         Ok(())
     }
 
     pub fn compile(&self) -> Result<()> {
-        todo!("Cannot compile for now, planned later")
-    }
-
-    pub fn execute(&self) -> Result<()> {
-        trace!("Start executing sources");
+        trace!("Start compiling sources");
         // This is just a simple "Hello, World!" to see that the file
         // reading is working.
         for (name, file) in &self.files {
-            file.execute()
+            file.compile()
                 .context(format!("While executing `{}`", name))?;
         }
-        todo!("Cannot exected for now, planned later")
+        todo!("Cannot compile for now, planned later")
     }
 
     pub fn pretty(&self) -> Result<()> {
