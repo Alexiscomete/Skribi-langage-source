@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use log::{info, trace};
+use log::{debug, info, trace};
 use miette::{Context, LabeledSpan, Result, Severity, miette};
 
 use crate::{file::File, lexer::tokenise};
@@ -21,7 +21,7 @@ impl Source<'_> {
         Source { file }
     }
 
-    pub fn execute(&self) -> Result<()> {
+    pub fn compile(&self) -> Result<()> {
         // Placeholder for later checks
         // May be moved later to the new function
         // Only do not do too much on a pull request
@@ -31,7 +31,7 @@ impl Source<'_> {
                 labels = vec![LabeledSpan::at(index..(index + 7), "There"),],
                 "Found deprecated skr_app"
             )
-            .with_source_code(self.file.into_named());
+            .with_source_code(self.file.create_source());
             return Err(error);
         }
         todo!("Finish execution (not the point for now)")
@@ -50,22 +50,18 @@ impl<'manager> SourceManager<'manager> {
     }
 
     pub fn add_file<'file: 'manager>(&mut self, file: File<'file>) {
-        info!("Adding file {} into source files", file.name);
+        debug!("Adding file {} into source files", file.name);
         self.files.insert(file.name, Source::new(file));
     }
 
     pub fn compile(&self) -> Result<()> {
-        todo!("Cannot compile for now, planned later")
-    }
-
-    pub fn execute(&self) -> Result<()> {
-        trace!("Start executing sources");
+        trace!("Start compiling sources");
         // This is just a simple "Hello, World!" to see that the file
         // reading is working.
         for (name, file) in &self.files {
-            file.execute()
+            file.compile()
                 .context(format!("While executing `{}`", name))?;
         }
-        todo!("Cannot exected for now, planned later")
+        todo!("Cannot compile for now, planned later")
     }
 }
