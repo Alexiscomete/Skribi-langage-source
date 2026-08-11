@@ -21,7 +21,7 @@ use clap::Parser;
 
 use env_logger::{Builder, Env};
 use log::trace;
-use miette::{Result, set_panic_hook, set_hook};
+use miette::{Result, set_hook, set_panic_hook};
 
 use cli::Arguments;
 
