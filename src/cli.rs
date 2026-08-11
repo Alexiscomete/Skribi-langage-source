@@ -21,12 +21,12 @@ pub(crate) struct Build {
 
 /// Creates a folder to store everything
 fn create_skribi_directory(path: &str) -> Result<()> {
-    trace!("About to create hidden directory `{}`", path);
+    trace!("About to create directory `{}`", path);
     create_dir_all(path).into_diagnostic().context(format!(
-        "While creating hidden `{}` directory to store compiled files",
+        "While creating `{}` directory to store compiled files",
         path
     ))?;
-    info!("Hidden directory `{}` created for compiled files", path);
+    info!("Directory `{}` created for compiled files", path);
     Ok(())
 }
 
