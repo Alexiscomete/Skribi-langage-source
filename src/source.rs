@@ -14,10 +14,16 @@ impl Source<'_> {
         trace!("Entenring source creation for `{}`", file.name);
         let tokens = tokenise(&file.content);
         let size = tokens.size_hint();
+        // Not used for anything else right now
+        // Will be directly used in parser in next PR
         info!(
+            // In general, 0 is detected as we have an indefinite size
+            // The tokens are parsed on demand I suppose
             "File `{}` splitted into at least {} tokens",
             file.name, size.0,
         );
+        // Added to see something
+        trace!("Tokens: {:?}", tokens.map(|(r, _)| r).collect::<Vec<_>>());
         Source { file }
     }
 
