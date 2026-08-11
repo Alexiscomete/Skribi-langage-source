@@ -1,10 +1,10 @@
 use std::{collections::HashMap, path::Path, process::Command};
 
 use chumsky::error::Rich;
+use log::{debug, info, trace, warn};
 use miette::{
     Context, Diagnostic, IntoDiagnostic, LabeledSpan, NamedSource, Report, Result, SourceSpan,
 };
-use log::{debug, info, trace, warn};
 use thiserror::Error;
 
 use crate::{
