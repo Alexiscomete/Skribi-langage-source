@@ -1,3 +1,4 @@
+use std::fs::create_dir_all;
 use log::{LevelFilter, info, trace};
 
 use crate::file::File;
@@ -15,8 +16,6 @@ pub(crate) struct Build {
     #[arg(short, long, default_value = ".skribi")]
     compile_path: String,
 }
-
-use std::fs::create_dir_all;
 
 /// Creates a folder to store everything
 fn create_skribi_directory(path: &str) -> Result<()> {

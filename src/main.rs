@@ -21,7 +21,7 @@ use clap::Parser;
 
 use env_logger::{Builder, Env};
 use log::trace;
-use miette::{Result, set_hook};
+use miette::{Result, set_panic_hook, set_hook};
 
 use cli::Arguments;
 
@@ -34,6 +34,10 @@ fn main() -> Result<()> {
             .filter_or("SKRIBI_C_LOG", "warn")
             .write_style("SKRIBI_C_LOG_STYLE"),
     );
+
+    // Allows to render panics using miette
+    // Allows an uniform representation of errors
+    set_panic_hook();
 
     // To ignore the env variable in production:
     // #[cfg(not (debug_assertions))]

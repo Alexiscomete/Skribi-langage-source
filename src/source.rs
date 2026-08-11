@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use chumsky::error::Rich;
 use log::debug;
-use log::{info, trace};
+use log::{info, trace, warn};
 use miette::{Context, Diagnostic, LabeledSpan, NamedSource, Result, Severity, SourceSpan, miette};
 use thiserror::Error;
 
@@ -73,9 +73,13 @@ impl Source<'_> {
         let tokens = tokenise(&file.content);
         let size = tokens.size_hint();
         info!(
+            // In general, 0 is detected as we have an indefinite size
+            // The tokens are parsed on demand I suppose
             "File `{}` splitted into at least {} tokens",
             file.name, size.0,
         );
+
+        // Not able to log tokens without consuming them (ownership)
         let result = parse(tokens, file.content.len());
         match result {
             Ok(root) => Ok(Source { file, root }),
@@ -94,7 +98,8 @@ impl Source<'_> {
                 "Found deprecated skr_app"
             )
             .with_source_code(self.file.create_source());
-            return Err(error);
+
+            warn!("Warning: {:?}", error);
         }
         todo!("Finish execution (not the point for now)")
     }

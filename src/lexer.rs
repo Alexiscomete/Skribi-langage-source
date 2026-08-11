@@ -2,7 +2,7 @@ use std::fmt::{Display, Formatter};
 
 use logos::{Logos, SpannedIter};
 
-#[derive(Logos, Clone, PartialEq)]
+#[derive(Logos, Clone, PartialEq, Debug)]
 pub enum Tokens<'src> {
     /// Names: variables, functions, ...
     #[regex(r#"[a-zA-Z][a-zA-Z0-9_]*"#)]
