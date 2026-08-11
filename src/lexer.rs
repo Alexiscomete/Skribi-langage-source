@@ -10,7 +10,7 @@ use logos::{Logos, SpannedIter};
 #[derive(Logos, Clone, PartialEq, Debug)]
 pub enum Tokens<'src> {
     /// Names: variables, functions, ...
-    #[regex(r#"[a-zA-Z][a-zA-Z0-9_]*"#)]
+    #[regex(r#"[a-zA-Z_][a-zA-Z0-9_]*"#)]
     Identifier(&'src str),
     /// Deprecated keyword to detect native calls,
     /// still there to test compatibility
