@@ -1,16 +1,16 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, sync::Arc};
 
 use log::{debug, info, trace, warn};
 use miette::{Context, LabeledSpan, Result, Severity, miette};
 
 use crate::{file::File, lexer::tokenise};
 
-pub struct Source<'file> {
-    file: File<'file>,
+pub struct Source {
+    file: File,
 }
 
-impl Source<'_> {
-    pub fn new<'file>(file: File<'file>) -> Source<'file> {
+impl Source {
+    pub fn new(file: File) -> Source {
         trace!("Entenring source creation for `{}`", file.name);
         let tokens = tokenise(&file.content);
         let size = tokens.size_hint();
@@ -45,20 +45,20 @@ impl Source<'_> {
     }
 }
 
-pub struct SourceManager<'sources> {
-    files: HashMap<&'sources str, Source<'sources>>,
+pub struct SourceManager {
+    files: HashMap<Arc<str>, Source>,
 }
 
-impl<'manager> SourceManager<'manager> {
+impl<'manager> SourceManager {
     pub fn empty() -> Self {
         SourceManager {
             files: HashMap::new(),
         }
     }
 
-    pub fn add_file<'file: 'manager>(&mut self, file: File<'file>) {
+    pub fn add_file<'file: 'manager>(&mut self, file: File) {
         debug!("Adding file {} into source files", file.name);
-        self.files.insert(file.name, Source::new(file));
+        self.files.insert(file.name.clone(), Source::new(file));
     }
 
     pub fn compile(&self) -> Result<()> {
