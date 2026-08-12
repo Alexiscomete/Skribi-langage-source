@@ -18,8 +18,7 @@ pub fn function_call_parser<'tok, 'src: 'tok, I>()
 where
     I: ValueInput<'tok, Token = Tokens, Span = SimpleSpan>,
 {
-    let identifier = just(Tokens::Identifier)
-        .map_with(|_, extra| extra.span());
+    let identifier = just(Tokens::Identifier).map_with(|_, extra| extra.span());
     // TODO: add a parser for chains
     let base = identifier;
     let call = empty()

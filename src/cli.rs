@@ -15,9 +15,6 @@ pub(crate) struct Build {
     /// Sets the path of the compilation folder.
     #[arg(short, long, default_value = ".skribi")]
     compile_path: String,
-    /// Pretty printe the code instead of compiling it.
-    #[arg(short, long)]
-    pretty: bool,
 }
 
 /// Creates a folder to store everything
@@ -34,18 +31,19 @@ fn create_skribi_directory(path: &str) -> Result<()> {
 impl Build {
     /// Compile the source code
     pub(crate) fn execute(self) -> Result<()> {
+        self.action(|manager| manager.compile())
+    }
+
+    pub(crate) fn action(self, action: fn(SourceManager) -> Result<()>) -> Result<()> {
         create_skribi_directory(&self.compile_path)?;
 
         if let Some(path) = self.source {
-            let file = File::from_file(path).context("While reading file passed as argument")?;
+            let file =
+                Arc::new(File::from_file(path).context("While reading file passed as argument")?);
             let mut manager = SourceManager::empty();
             manager.add_file(file)?;
 
-            if self.pretty {
-                manager.pretty()
-            } else {
-                manager.compile()
-            }
+            action(manager)
         } else {
             todo!("STDIN is currently not supported")
         }
@@ -67,11 +65,26 @@ impl Run {
 }
 
 #[derive(Parser, Debug)]
+pub(crate) struct Pretty {
+    #[command(flatten)]
+    pub(crate) build: Build,
+}
+
+impl Pretty {
+    /// Pretty print the code instead of compiling it
+    pub(crate) fn execute(self) -> Result<()> {
+        self.build.action(|manager| manager.pretty())
+    }
+}
+
+#[derive(Parser, Debug)]
 pub(crate) enum Command {
     /// Build the source code into machine code
     Build(Build),
     /// Build the source code and run it directly after
     Run(Run),
+    /// Pretty print the code instead of compiling it
+    Pretty(Pretty),
 }
 
 impl Command {
@@ -80,6 +93,7 @@ impl Command {
         match self {
             Command::Build(build) => build.execute(),
             Command::Run(run) => run.execute(),
+            Command::Pretty(pretty) => pretty.execute(),
         }
     }
 }

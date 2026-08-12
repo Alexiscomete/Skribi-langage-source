@@ -15,7 +15,7 @@ use crate::{
 };
 
 pub struct Source {
-    file: File,
+    file: Arc<File>,
     // TODO: add first user of the tree to remove this
     #[allow(dead_code)]
     root: FileTreeRoot,
@@ -68,7 +68,7 @@ fn convert_to_err(file: &File, errs: Vec<Rich<'_, Tokens>>) -> ParsingErrors {
     }
 }
 
-fn get_root<'root, 'file: 'root>(file: &File) -> Result<FileTreeRoot> {
+fn get_root<'root, 'file: 'root>(file: Arc<File>) -> Result<FileTreeRoot> {
     let tokens = tokenise(&file.content);
     let size = tokens.size_hint();
     info!(
@@ -80,16 +80,17 @@ fn get_root<'root, 'file: 'root>(file: &File) -> Result<FileTreeRoot> {
 
     // Not able to log tokens without consuming them (ownership)
     parse(tokens, file.content.len())
-        .map_err(
-            |errs|
-            convert_to_err(&file, errs).into()
-        )
+        .map_err(|errs| convert_to_err(&file, errs).into())
+        .map(|mut root| {
+            root.file = Some(file.clone());
+            root
+        })
 }
 
 impl Source {
-    pub fn new<'file>(file: File) -> Result<Source> {
+    pub fn new(file: Arc<File>) -> Result<Source> {
         trace!("Entenring source creation for `{}`", file.name);
-        let root = get_root(&file)?;
+        let root = get_root(file.clone())?;
         Ok(Source { file, root })
     }
 
@@ -122,15 +123,7 @@ impl SourceManager {
         }
     }
 
-    pub fn from_path<'path>(&mut self, path: Arc<str>) -> Result<()> {
-        let file = File::from_file(path).context("While reading a skribi file")?;
-        debug!("Adding file {} into source files", file.name);
-        let source = Source::new(file)?;
-        self.files.insert(source.file.name.clone(), source);
-        Ok(())
-    }
-
-    pub fn add_file<'file>(&mut self, file: File) -> Result<()> {
+    pub fn add_file(&mut self, file: Arc<File>) -> Result<()> {
         debug!("Adding file {} into source files", file.name);
         self.files.insert(file.name.clone(), Source::new(file)?);
         Ok(())

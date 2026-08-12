@@ -1,15 +1,30 @@
-use std::fmt::{Display, Error, Formatter};
+use log::error;
+use std::{
+    fmt::{Display, Error, Formatter},
+    sync::Arc,
+};
 
-use crate::ast::{nodes::FileTreeRoot, visitors::AstMutVisitor};
+use crate::{
+    ast::{nodes::FileTreeRoot, visitors::AstMutVisitor},
+    file::File,
+};
 
-struct PrettyPrinterVisitor<'fmt_ref, 'fmt_object> {
+struct PrettyPrinterVisitor<'fmt_ref, 'fmt_object, 'file> {
     f: &'fmt_ref mut Formatter<'fmt_object>,
     indent: usize,
+    file: &'file Option<Arc<File>>,
 }
 
 impl Display for FileTreeRoot {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        let mut printer = PrettyPrinterVisitor { f, indent: 0 };
+        let mut printer = PrettyPrinterVisitor {
+            f,
+            indent: 0,
+            file: &self.file,
+        };
+        if self.file.is_none() {
+            error!("No file detected while formatting the AST");
+        }
         printer.visit_file_tree_root(self)
     }
 }
@@ -28,7 +43,7 @@ macro_rules! write_self {
     };
 }
 
-impl AstMutVisitor<'_, (), Error> for PrettyPrinterVisitor<'_, '_> {
+impl AstMutVisitor<'_, (), Error> for PrettyPrinterVisitor<'_, '_, '_> {
     fn default_t(_: super::DefaultCause) -> miette::Result<(), Error> {
         Ok(())
     }
@@ -66,6 +81,11 @@ impl AstMutVisitor<'_, (), Error> for PrettyPrinterVisitor<'_, '_> {
         function_call: &crate::ast::nodes::calls::functions::FunctionCall,
     ) -> miette::Result<(), Error> {
         self.default_function_call(function_call)?;
-        write_self!(self, "{}()", function_call.name)
+        if let Some(file) = self.file {
+            let name = &file.content[function_call.name.into_range()];
+            write_self!(self, "{}()", name)
+        } else {
+            write_self!(self, "{}()", function_call.name)
+        }
     }
 }
