@@ -15,9 +15,9 @@ use crate::{
 };
 
 pub struct Source {
+    // May be removed later as also stored in the FileTreeRoot
+    // However, as it is not initialised directly (option) we may keep this
     file: Arc<File>,
-    // TODO: add first user of the tree to remove this
-    #[allow(dead_code)]
     root: FileTreeRoot,
 }
 
