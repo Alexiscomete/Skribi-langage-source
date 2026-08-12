@@ -40,6 +40,7 @@
             clippy
             rustfmt
             rustc
+            cargo-audit
           ];
         };
       }
