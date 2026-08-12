@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::sync::Arc;
 
 use chumsky::error::Rich;
 use log::debug;
@@ -13,11 +14,11 @@ use crate::{
     parse::parse,
 };
 
-pub struct Source<'file> {
-    file: &'file File<'file>,
+pub struct Source {
+    file: File,
     // TODO: add first user of the tree to remove this
     #[allow(dead_code)]
-    root: FileTreeRoot<'file>,
+    root: FileTreeRoot,
 }
 
 #[derive(Error, Debug, Diagnostic)]
@@ -42,7 +43,7 @@ struct ParsingErrors {
     related: Vec<ParsingSingleError>,
 }
 
-fn convert_to_err(file: &File<'_>, errs: Vec<Rich<'_, Tokens<'_>>>) -> ParsingErrors {
+fn convert_to_err(file: &File, errs: Vec<Rich<'_, Tokens>>) -> ParsingErrors {
     // Greatly inspired from
     // https://codeberg.org/zesterer/chumsky/src/branch/main/examples/nano_rust.rs
     ParsingErrors {
@@ -67,24 +68,29 @@ fn convert_to_err(file: &File<'_>, errs: Vec<Rich<'_, Tokens<'_>>>) -> ParsingEr
     }
 }
 
-impl Source<'_> {
-    pub fn new<'file>(file: &'file File<'file>) -> Result<Source<'file>> {
-        trace!("Entenring source creation for `{}`", file.name);
-        let tokens = tokenise(&file.content);
-        let size = tokens.size_hint();
-        info!(
-            // In general, 0 is detected as we have an indefinite size
-            // The tokens are parsed on demand I suppose
-            "File `{}` splitted into at least {} tokens",
-            file.name, size.0,
-        );
+fn get_root<'root, 'file: 'root>(file: &File) -> Result<FileTreeRoot> {
+    let tokens = tokenise(&file.content);
+    let size = tokens.size_hint();
+    info!(
+        // In general, 0 is detected as we have an indefinite size
+        // The tokens are parsed on demand I suppose
+        "File `{}` splitted into at least {} tokens",
+        file.name, size.0,
+    );
 
-        // Not able to log tokens without consuming them (ownership)
-        let result = parse(tokens, file.content.len());
-        match result {
-            Ok(root) => Ok(Source { file, root }),
-            Err(errs) => Err(convert_to_err(file, errs).into()),
-        }
+    // Not able to log tokens without consuming them (ownership)
+    parse(tokens, file.content.len())
+        .map_err(
+            |errs|
+            convert_to_err(&file, errs).into()
+        )
+}
+
+impl Source {
+    pub fn new<'file>(file: File) -> Result<Source> {
+        trace!("Entenring source creation for `{}`", file.name);
+        let root = get_root(&file)?;
+        Ok(Source { file, root })
     }
 
     pub fn compile(&self) -> Result<()> {
@@ -105,20 +111,28 @@ impl Source<'_> {
     }
 }
 
-pub struct SourceManager<'sources> {
-    files: HashMap<&'sources str, Source<'sources>>,
+pub struct SourceManager {
+    files: HashMap<Arc<str>, Source>,
 }
 
-impl<'manager> SourceManager<'manager> {
+impl SourceManager {
     pub fn empty() -> Self {
         SourceManager {
             files: HashMap::new(),
         }
     }
 
-    pub fn add_file<'file: 'manager>(&mut self, file: &'file File<'file>) -> Result<()> {
+    pub fn from_path<'path>(&mut self, path: Arc<str>) -> Result<()> {
+        let file = File::from_file(path).context("While reading a skribi file")?;
         debug!("Adding file {} into source files", file.name);
-        self.files.insert(file.name, Source::new(file)?);
+        let source = Source::new(file)?;
+        self.files.insert(source.file.name.clone(), source);
+        Ok(())
+    }
+
+    pub fn add_file<'file>(&mut self, file: File) -> Result<()> {
+        debug!("Adding file {} into source files", file.name);
+        self.files.insert(file.name.clone(), Source::new(file)?);
         Ok(())
     }
 

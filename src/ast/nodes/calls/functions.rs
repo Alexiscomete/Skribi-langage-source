@@ -4,13 +4,13 @@ use chumsky::span::SimpleSpan;
 /// TODO: add arguments.
 /// TODO: replace name with a full path.
 #[derive(PartialEq, Clone)]
-pub struct FunctionCall<'tok> {
-    pub name: &'tok str,
+pub struct FunctionCall {
+    pub name: SimpleSpan,
     pub span: SimpleSpan,
 }
 
-impl FunctionCall<'_> {
-    pub fn new<'a>(name: &'a str, span: SimpleSpan) -> FunctionCall<'a> {
+impl FunctionCall {
+    pub fn new(name: SimpleSpan, span: SimpleSpan) -> FunctionCall {
         FunctionCall { name, span }
     }
 }

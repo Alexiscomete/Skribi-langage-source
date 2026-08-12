@@ -7,7 +7,7 @@ struct PrettyPrinterVisitor<'fmt_ref, 'fmt_object> {
     indent: usize,
 }
 
-impl Display for FileTreeRoot<'_> {
+impl Display for FileTreeRoot {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let mut printer = PrettyPrinterVisitor { f, indent: 0 };
         printer.visit_file_tree_root(self)
@@ -35,7 +35,7 @@ impl AstMutVisitor<'_, (), Error> for PrettyPrinterVisitor<'_, '_> {
 
     fn visit_statement(
         &mut self,
-        statement: &crate::ast::nodes::statements::Statement<'_>,
+        statement: &crate::ast::nodes::statements::Statement,
     ) -> miette::Result<(), Error> {
         self.default_statement(statement)?;
         write_self_indent!(self, "\n")
@@ -43,7 +43,7 @@ impl AstMutVisitor<'_, (), Error> for PrettyPrinterVisitor<'_, '_> {
 
     fn visit_expression(
         &mut self,
-        expression: &crate::ast::nodes::expressions::Expression<'_>,
+        expression: &crate::ast::nodes::expressions::Expression,
     ) -> miette::Result<(), Error> {
         self.indent += IDENT;
         write_self_indent!(self, "(\n")?;
@@ -63,7 +63,7 @@ impl AstMutVisitor<'_, (), Error> for PrettyPrinterVisitor<'_, '_> {
 
     fn visit_function_call(
         &mut self,
-        function_call: &crate::ast::nodes::calls::functions::FunctionCall<'_>,
+        function_call: &crate::ast::nodes::calls::functions::FunctionCall,
     ) -> miette::Result<(), Error> {
         self.default_function_call(function_call)?;
         write_self!(self, "{}()", function_call.name)
