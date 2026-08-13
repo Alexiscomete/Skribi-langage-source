@@ -3,12 +3,13 @@ use std::{collections::HashMap, sync::Arc};
 use chumsky::error::Rich;
 use log::{debug, info, trace, warn};
 use miette::{Context, Diagnostic, LabeledSpan, NamedSource, Result, Severity, SourceSpan, miette};
-use string_interner::DefaultStringInterner;
+use string_interner::DefaultSymbol;
 use thiserror::Error;
 
 use crate::{
     ast::nodes::FileTreeRoot,
     file::File,
+    interner::INTERNER,
     lexer::{Tokens, tokenise},
     parse::parse,
 };
@@ -67,12 +68,19 @@ pub struct Source {
     root: FileTreeRoot,
 }
 
-impl Source {
-    pub fn new(file: File, interner: &mut DefaultStringInterner) -> Result<Source> {
-        trace!("Entenring source creation for `{}`", file.name);
-        let error_symbol = interner.get_or_intern_static("?");
+fn error_symbol() -> Result<DefaultSymbol> {
+    let mut interner = INTERNER
+        .try_lock()
+        .map_err(|e| miette!("Unable to access interner: {}", e))?;
+    Ok(interner.get_or_intern_static("?"))
+}
 
-        let tokens = tokenise(&file.content, interner);
+impl Source {
+    pub fn new(file: File) -> Result<Source> {
+        trace!("Entenring source creation for `{}`", file.name);
+        let error_symbol = error_symbol()?;
+
+        let tokens = tokenise(&file.content).context("Failed to tokenise the input")?;
         let size = tokens.len();
         info!(
             "File `{}` splitted into at least {} tokens",
@@ -106,22 +114,22 @@ impl Source {
 }
 
 pub struct SourceManager {
-    interner: DefaultStringInterner,
     files: HashMap<Arc<str>, Source>,
 }
 
 impl SourceManager {
     pub fn empty() -> Self {
         SourceManager {
-            interner: DefaultStringInterner::default(),
             files: HashMap::new(),
         }
     }
 
     pub fn add_file(&mut self, file: File) -> Result<()> {
         debug!("Adding file {} into source files", file.name);
-        self.files
-            .insert(file.name.clone(), Source::new(file, &mut self.interner)?);
+        self.files.insert(
+            file.name.clone(),
+            Source::new(file).context("Failed parse the file")?,
+        );
         Ok(())
     }
 

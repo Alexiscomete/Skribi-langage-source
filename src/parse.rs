@@ -3,8 +3,8 @@ use chumsky::input::{Input, Stream, ValueInput};
 use chumsky::prelude::{choice, empty, just, recursive, via_parser};
 use chumsky::span::SimpleSpan;
 use chumsky::{IterParser, Parser, extra};
-use logos::{Span};
-use string_interner::{DefaultSymbol};
+use logos::Span;
+use string_interner::DefaultSymbol;
 
 use crate::ast::nodes::FileTreeRoot;
 use crate::ast::nodes::expressions::Expression;

@@ -1,10 +1,13 @@
-use std::fmt::Debug;
+use std::fmt::{Debug, Error};
 use std::fmt::{Display, Formatter};
 
+use log::error;
 use logos::{Logos, Span};
+use miette::{Result, miette};
 use string_interner::DefaultStringInterner;
 use string_interner::DefaultSymbol;
-use string_interner::Symbol;
+
+use crate::interner::INTERNER;
 
 // NOTE: logos is smart: like CSS, it calculates a priority score based on the
 // specificity of the rule. "token" has the priority over anything else. Then,
@@ -40,9 +43,19 @@ pub enum Tokens {
 impl Display for Tokens {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         if let Self::Identifier(str) = self {
-            write!(f, "{}", str.to_usize())
+            let interner = INTERNER.try_lock().map_err(|_| {
+                error!("Failed to get the lock");
+                Error::default()
+            })?;
+            let name = interner.resolve(str.clone()).unwrap_or_else(|| "ERROR");
+            write!(f, "{}", name)
         } else if let Self::Error(err) = self {
-            write!(f, "{}", err.to_usize())
+            let interner = INTERNER.try_lock().map_err(|_| {
+                error!("Failed to get the lock");
+                Error::default()
+            })?;
+            let name = interner.resolve(err.clone()).unwrap_or_else(|| "ERROR");
+            write!(f, "{}", name)
         } else {
             write!(
                 f,
@@ -67,15 +80,16 @@ impl Debug for Tokens {
 }
 
 /// Split a file content into tokens
-pub fn tokenise(
-    arg: &str,
-    interner: &mut DefaultStringInterner,
-) -> Vec<(Result<Tokens, ()>, Span)> {
+pub fn tokenise(arg: &str) -> Result<Vec<(Result<Tokens, ()>, Span)>> {
+    let mut interner = INTERNER
+        .try_lock()
+        .map_err(|e| miette!("Unable to access interner: {}", e))?;
+
     // Inspired from the logos example
-    Tokens::lexer_with_extras(arg, interner)
+    Ok(Tokens::lexer_with_extras(arg, &mut interner)
         .spanned()
         // Used to remove the lifetime
         // Implies that everything is tokenised, however we cannot do anything
         // else as we have a mutable borrow of the interner
-        .collect()
+        .collect())
 }
