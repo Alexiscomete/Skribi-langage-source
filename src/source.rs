@@ -1,9 +1,9 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, sync::Arc};
 
 use chumsky::error::Rich;
-use log::debug;
-use log::{info, trace, warn};
+use log::{debug, info, trace, warn};
 use miette::{Context, Diagnostic, LabeledSpan, NamedSource, Result, Severity, SourceSpan, miette};
+use string_interner::DefaultStringInterner;
 use thiserror::Error;
 
 use crate::{
@@ -12,13 +12,6 @@ use crate::{
     lexer::{Tokens, tokenise},
     parse::parse,
 };
-
-pub struct Source<'file> {
-    file: &'file File<'file>,
-    // TODO: add first user of the tree to remove this
-    #[allow(dead_code)]
-    root: FileTreeRoot<'file>,
-}
 
 #[derive(Error, Debug, Diagnostic)]
 #[error("{message}")]
@@ -37,12 +30,12 @@ struct ParsingSingleError {
 #[diagnostic(help("Always try to fix the first parsing error as they might be cascades"))]
 struct ParsingErrors {
     #[source_code]
-    src: NamedSource<String>,
+    src: NamedSource<Arc<str>>,
     #[related]
     related: Vec<ParsingSingleError>,
 }
 
-fn convert_to_err(file: &File<'_>, errs: Vec<Rich<'_, Tokens<'_>>>) -> ParsingErrors {
+fn convert_to_err(file: &File, errs: Vec<Rich<'_, Tokens>>) -> ParsingErrors {
     // Greatly inspired from
     // https://codeberg.org/zesterer/chumsky/src/branch/main/examples/nano_rust.rs
     ParsingErrors {
@@ -67,23 +60,30 @@ fn convert_to_err(file: &File<'_>, errs: Vec<Rich<'_, Tokens<'_>>>) -> ParsingEr
     }
 }
 
-impl Source<'_> {
-    pub fn new<'file>(file: &'file File<'file>) -> Result<Source<'file>> {
+pub struct Source {
+    file: File,
+    // TODO: add first user of the tree to remove this
+    #[allow(dead_code)]
+    root: FileTreeRoot,
+}
+
+impl Source {
+    pub fn new(file: File, interner: &mut DefaultStringInterner) -> Result<Source> {
         trace!("Entenring source creation for `{}`", file.name);
-        let tokens = tokenise(&file.content);
-        let size = tokens.size_hint();
+        let error_symbol = interner.get_or_intern_static("?");
+
+        let tokens = tokenise(&file.content, interner);
+        let size = tokens.len();
         info!(
-            // In general, 0 is detected as we have an indefinite size
-            // The tokens are parsed on demand I suppose
             "File `{}` splitted into at least {} tokens",
-            file.name, size.0,
+            file.name, size,
         );
 
         // Not able to log tokens without consuming them (ownership)
-        let result = parse(tokens, file.content.len());
+        let result = parse(tokens, file.content.len(), &error_symbol);
         match result {
             Ok(root) => Ok(Source { file, root }),
-            Err(errs) => Err(convert_to_err(file, errs).into()),
+            Err(errs) => Err(convert_to_err(&file, errs).into()),
         }
     }
 
@@ -105,20 +105,23 @@ impl Source<'_> {
     }
 }
 
-pub struct SourceManager<'sources> {
-    files: HashMap<&'sources str, Source<'sources>>,
+pub struct SourceManager {
+    interner: DefaultStringInterner,
+    files: HashMap<Arc<str>, Source>,
 }
 
-impl<'manager> SourceManager<'manager> {
+impl SourceManager {
     pub fn empty() -> Self {
         SourceManager {
+            interner: DefaultStringInterner::default(),
             files: HashMap::new(),
         }
     }
 
-    pub fn add_file<'file: 'manager>(&mut self, file: &'file File<'file>) -> Result<()> {
+    pub fn add_file(&mut self, file: File) -> Result<()> {
         debug!("Adding file {} into source files", file.name);
-        self.files.insert(file.name, Source::new(file)?);
+        self.files
+            .insert(file.name.clone(), Source::new(file, &mut self.interner)?);
         Ok(())
     }
 

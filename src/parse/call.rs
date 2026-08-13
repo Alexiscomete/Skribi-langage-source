@@ -15,9 +15,9 @@ use crate::{
 };
 
 pub fn function_call_parser<'tok, 'src: 'tok, I>()
--> impl Parser<'tok, I, FunctionCall<'src>, extra::Err<Rich<'tok, Tokens<'src>>>> + Clone
+-> impl Parser<'tok, I, FunctionCall, extra::Err<Rich<'tok, Tokens>>> + Clone
 where
-    I: ValueInput<'tok, Token = Tokens<'src>, Span = SimpleSpan>,
+    I: ValueInput<'tok, Token = Tokens, Span = SimpleSpan>,
 {
     let identifier = select! {
         Tokens::Identifier(str) => str
@@ -39,9 +39,9 @@ where
 }
 
 pub fn native_parser<'tok, 'src: 'tok, I>()
--> impl Parser<'tok, I, Deprecated, extra::Err<Rich<'tok, Tokens<'src>>>> + Clone
+-> impl Parser<'tok, I, Deprecated, extra::Err<Rich<'tok, Tokens>>> + Clone
 where
-    I: ValueInput<'tok, Token = Tokens<'src>, Span = SimpleSpan>,
+    I: ValueInput<'tok, Token = Tokens, Span = SimpleSpan>,
 {
     just(Tokens::NativeCall)
         .map_with(|_, extra| Deprecated::new("skr_app should not be used", extra.span()))

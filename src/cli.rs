@@ -1,5 +1,6 @@
+use std::{fs::create_dir_all, sync::Arc};
+
 use log::{LevelFilter, info, trace};
-use std::fs::create_dir_all;
 
 use crate::file::File;
 use crate::source::SourceManager;
@@ -11,7 +12,7 @@ use miette::{Context, IntoDiagnostic, Result};
 pub(crate) struct Build {
     /// The source file to use. Defaults to STDIN.
     /// STDIN is currently not supported.
-    pub(crate) source: Option<String>,
+    pub(crate) source: Option<Arc<str>>,
     /// Sets the path of the compilation folder.
     #[arg(short, long, default_value = ".skribi")]
     compile_path: String,
@@ -34,9 +35,9 @@ impl Build {
         create_skribi_directory(&self.compile_path)?;
 
         if let Some(path) = self.source {
-            let file = File::from_file(&path).context("While reading file passed as argument")?;
+            let file = File::from_file(path).context("While reading file passed as argument")?;
             let mut manager = SourceManager::empty();
-            manager.add_file(&file)?;
+            manager.add_file(file)?;
 
             manager.compile()
         } else {
