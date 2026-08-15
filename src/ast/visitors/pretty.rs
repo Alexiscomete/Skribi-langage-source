@@ -78,9 +78,7 @@ impl AstMutVisitor<'_, (), Error> for PrettyPrinterVisitor<'_, '_> {
             error!("Failed to get the lock");
             Error
         })?;
-        let name = interner
-            .resolve(function_call.name)
-            .unwrap_or("ERROR");
+        let name = interner.resolve(function_call.name).unwrap_or("ERROR");
 
         write_self!(self, "{}()", name)
     }
