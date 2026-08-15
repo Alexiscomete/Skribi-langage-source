@@ -1,5 +1,6 @@
-use log::{LevelFilter, info, trace};
 use std::{fs::create_dir_all, sync::Arc};
+
+use log::{LevelFilter, info, trace};
 
 use crate::file::File;
 use crate::source::SourceManager;

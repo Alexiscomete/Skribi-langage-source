@@ -1,15 +1,15 @@
-use std::collections::HashMap;
-use std::sync::Arc;
+use std::{collections::HashMap, sync::Arc};
 
 use chumsky::error::Rich;
-use log::debug;
-use log::{info, trace, warn};
+use log::{debug, info, trace, warn};
 use miette::{Context, Diagnostic, LabeledSpan, NamedSource, Result, Severity, SourceSpan, miette};
+use string_interner::DefaultSymbol;
 use thiserror::Error;
 
 use crate::{
     ast::nodes::FileTreeRoot,
     file::File,
+    interner::INTERNER,
     lexer::{Tokens, tokenise},
     parse::parse,
 };
@@ -38,7 +38,7 @@ struct ParsingSingleError {
 #[diagnostic(help("Always try to fix the first parsing error as they might be cascades"))]
 struct ParsingErrors {
     #[source_code]
-    src: NamedSource<String>,
+    src: NamedSource<Arc<str>>,
     #[related]
     related: Vec<ParsingSingleError>,
 }
@@ -69,22 +69,28 @@ fn convert_to_err(file: &File, errs: Vec<Rich<'_, Tokens>>) -> ParsingErrors {
 }
 
 fn get_root<'root, 'file: 'root>(file: Arc<File>) -> Result<FileTreeRoot> {
-    let tokens = tokenise(&file.content);
-    let size = tokens.size_hint();
+    let tokens = tokenise(&file.content).context("Failed to tokenise the input")?;
+    let size = tokens.len();
     info!(
-        // In general, 0 is detected as we have an indefinite size
-        // The tokens are parsed on demand I suppose
         "File `{}` splitted into at least {} tokens",
-        file.name, size.0,
+        file.name, size,
     );
 
     // Not able to log tokens without consuming them (ownership)
-    parse(tokens, file.content.len())
+    let error_symbol = error_symbol()?;
+    parse(tokens, file.content.len(), &error_symbol)
         .map_err(|errs| convert_to_err(&file, errs).into())
         .map(|mut root| {
             root.file = Some(file.clone());
             root
         })
+}
+
+fn error_symbol() -> Result<DefaultSymbol> {
+    let mut interner = INTERNER
+        .try_lock()
+        .map_err(|e| miette!("Unable to access interner: {}", e))?;
+    Ok(interner.get_or_intern_static("?"))
 }
 
 impl Source {
@@ -125,7 +131,10 @@ impl SourceManager {
 
     pub fn add_file(&mut self, file: Arc<File>) -> Result<()> {
         debug!("Adding file {} into source files", file.name);
-        self.files.insert(file.name.clone(), Source::new(file)?);
+        self.files.insert(
+            file.name.clone(),
+            Source::new(file).context("Failed parse the file")?,
+        );
         Ok(())
     }
 
