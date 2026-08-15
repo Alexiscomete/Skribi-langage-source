@@ -1,18 +1,22 @@
-use crate::ast::nodes::statements::Statement;
+use std::sync::Arc;
+
+use crate::{ast::nodes::statements::Statement, file::File};
 
 pub mod calls;
 pub mod deprecated;
 pub mod expressions;
 pub mod statements;
 
-pub struct FileTreeRoot<'tok> {
-    // TODO: add first user of the tree to remove this
-    #[allow(dead_code)]
-    pub content: Vec<Statement<'tok>>,
+pub struct FileTreeRoot {
+    pub content: Vec<Statement>,
+    pub file: Option<Arc<File>>,
 }
 
-impl FileTreeRoot<'_> {
-    pub fn new<'tok>(content: Vec<Statement<'tok>>) -> FileTreeRoot<'tok> {
-        FileTreeRoot { content }
+impl FileTreeRoot {
+    pub fn new(content: Vec<Statement>) -> FileTreeRoot {
+        FileTreeRoot {
+            content,
+            file: None,
+        }
     }
 }

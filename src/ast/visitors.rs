@@ -62,14 +62,14 @@ macro_rules! make_ast_visitor {
 
             fn visit_file_tree_root(
                 &$($self_mutable)? self,
-                file_tree_root: &$($mutable)? FileTreeRoot<'life>,
+                file_tree_root: &$($mutable)? FileTreeRoot,
             ) -> Result<T, R> {
                 self.default_file_tree_root(file_tree_root)
             }
 
             fn default_file_tree_root(
                 &$($self_mutable)? self,
-                file_tree_root: &$($mutable)? FileTreeRoot<'life>,
+                file_tree_root: &$($mutable)? FileTreeRoot,
             ) -> Result<T, R> {
                 let mut res = None;
                 for statement in &$($mutable)? file_tree_root.content {
@@ -84,14 +84,14 @@ macro_rules! make_ast_visitor {
 
             fn visit_statement(
                 &$($self_mutable)? self,
-                statement: &$($mutable)? Statement<'life>,
+                statement: &$($mutable)? Statement,
             ) -> Result<T, R> {
                 self.default_statement(statement)
             }
 
             fn default_statement(
                 &$($self_mutable)? self,
-                statement: &$($mutable)? Statement<'life>,
+                statement: &$($mutable)? Statement,
             ) -> Result<T, R> {
                 match statement {
                     Statement::Expression(expression) => self.visit_expression(expression),
@@ -116,14 +116,14 @@ macro_rules! make_ast_visitor {
 
             fn visit_expression(
                 &$($self_mutable)? self,
-                expression: &$($mutable)? Expression<'life>,
+                expression: &$($mutable)? Expression,
             ) -> Result<T, R> {
                 self.default_expression(expression)
             }
 
             fn default_expression(
                 &$($self_mutable)? self,
-                expression: &$($mutable)? Expression<'life>,
+                expression: &$($mutable)? Expression,
             ) -> Result<T, R> {
                 match expression {
                     Expression::FunctionCall(function_call) => self.visit_function_call(function_call),
@@ -132,7 +132,7 @@ macro_rules! make_ast_visitor {
 
             fn visit_function_call(
                 &$($self_mutable)? self,
-                function_call: &$($mutable)? FunctionCall<'life>,
+                function_call: &$($mutable)? FunctionCall,
             ) -> Result<T, R> {
                 self.default_function_call(function_call)
             }
@@ -141,7 +141,7 @@ macro_rules! make_ast_visitor {
                 &$($self_mutable)? self,
                 // Remove this when adding arguments and full path
                 #[allow(unused)]
-                function_call: &$($mutable)? FunctionCall<'life>,
+                function_call: &$($mutable)? FunctionCall,
             ) -> Result<T, R> {
                 Self::default_t(DefaultCause::FunctionCall)
             }

@@ -11,3 +11,4 @@ log = "0.4.33"
 logos = "0.16.1"
 miette = { version = "7.6.0", features = ["fancy"] }
 thiserror = "2.0.19"
+string-interner = "0.20.0"
