@@ -1,9 +1,9 @@
-use std::fmt::{Debug};
+use std::fmt::Debug;
 use std::fmt::{Display, Formatter};
 
 use logos::{Logos, SpannedIter};
-use string_interner::DefaultSymbol;
 use string_interner::DefaultStringInterner;
+use string_interner::DefaultSymbol;
 use string_interner::Symbol;
 
 // NOTE: logos is smart: like CSS, it calculates a priority score based on the
@@ -44,14 +44,18 @@ impl Display for Tokens {
         } else if let Self::Error(err) = self {
             write!(f, "{}", err.to_usize())
         } else {
-            write!(f, "{}", match self {
-                Self::LeftParenthesis => "(",
-                Self::RightParenthesis => ")",
-                Self::Ignore => " ",
-                Self::NativeCall => "skr_app",
-                // WARNING: when adding tokens, always check the above list
-                _ => unreachable!(),
-            })
+            write!(
+                f,
+                "{}",
+                match self {
+                    Self::LeftParenthesis => "(",
+                    Self::RightParenthesis => ")",
+                    Self::Ignore => " ",
+                    Self::NativeCall => "skr_app",
+                    // WARNING: when adding tokens, always check the above list
+                    _ => unreachable!(),
+                }
+            )
         }
     }
 }
@@ -63,7 +67,10 @@ impl Debug for Tokens {
 }
 
 /// Split a file content into tokens
-pub fn tokenise<'a>(arg: &'a str, interner: &'a mut DefaultStringInterner) -> SpannedIter<'a, Tokens> {
+pub fn tokenise<'a>(
+    arg: &'a str,
+    interner: &'a mut DefaultStringInterner,
+) -> SpannedIter<'a, Tokens> {
     // Inspired from the logos example
     Tokens::lexer_with_extras(arg, interner).spanned()
 }

@@ -2,7 +2,7 @@ use std::{collections::HashMap, sync::Arc};
 
 use log::{debug, info, trace, warn};
 use miette::{Context, LabeledSpan, Result, Severity, miette};
-use string_interner::{DefaultStringInterner};
+use string_interner::DefaultStringInterner;
 
 use crate::{file::File, lexer::tokenise};
 
@@ -51,7 +51,7 @@ pub struct SourceManager {
     files: HashMap<Arc<str>, Source>,
 }
 
-impl<'manager> SourceManager {
+impl SourceManager {
     pub fn empty() -> Self {
         SourceManager {
             interner: DefaultStringInterner::default(),
@@ -59,9 +59,10 @@ impl<'manager> SourceManager {
         }
     }
 
-    pub fn add_file<'file: 'manager>(&mut self, file: File) {
+    pub fn add_file(&mut self, file: File) {
         debug!("Adding file {} into source files", file.name);
-        self.files.insert(file.name.clone(), Source::new(file, &mut self.interner));
+        self.files
+            .insert(file.name.clone(), Source::new(file, &mut self.interner));
     }
 
     pub fn compile(&self) -> Result<()> {

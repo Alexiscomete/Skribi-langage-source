@@ -12,7 +12,7 @@ pub struct File {
 }
 
 impl File {
-    pub fn from_file<'name>(path: Arc<str>) -> Result<File> {
+    pub fn from_file(path: Arc<str>) -> Result<File> {
         trace!("Reading file `{}`", path);
         if !path.ends_with(".skrb") {
             warn!("File `{}` does not end in .skrb", path);
