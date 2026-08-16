@@ -3,7 +3,8 @@ use chumsky::input::{Input, Stream, ValueInput};
 use chumsky::prelude::{choice, empty, just, recursive, via_parser};
 use chumsky::span::SimpleSpan;
 use chumsky::{IterParser, Parser, extra};
-use logos::SpannedIter;
+use logos::Span;
+use string_interner::DefaultSymbol;
 
 use crate::ast::nodes::FileTreeRoot;
 use crate::ast::nodes::expressions::Expression;
@@ -21,9 +22,9 @@ pub mod call;
 // This does not actually parse anything.
 
 fn expression_parser<'tok, 'src: 'tok, I>()
--> impl Parser<'tok, I, Expression<'src>, extra::Err<Rich<'tok, Tokens<'src>>>> + Clone + 'tok
+-> impl Parser<'tok, I, Expression, extra::Err<Rich<'tok, Tokens>>> + Clone + 'tok
 where
-    I: ValueInput<'tok, Token = Tokens<'src>, Span = SimpleSpan>,
+    I: ValueInput<'tok, Token = Tokens, Span = SimpleSpan>,
 {
     // exp := (exp) | native_call
     // This is over complicated as more rules will be added
@@ -48,9 +49,9 @@ where
 }
 
 fn statement_parser<'tok, 'src: 'tok, I>()
--> impl Parser<'tok, I, Statement<'src>, extra::Err<Rich<'tok, Tokens<'src>>>>
+-> impl Parser<'tok, I, Statement, extra::Err<Rich<'tok, Tokens>>>
 where
-    I: ValueInput<'tok, Token = Tokens<'src>, Span = SimpleSpan>,
+    I: ValueInput<'tok, Token = Tokens, Span = SimpleSpan>,
 {
     choice((
         native_parser().map(Statement::Deprecated),
@@ -60,9 +61,9 @@ where
 }
 
 fn root_parser<'tok, 'src: 'tok, I>()
--> impl Parser<'tok, I, FileTreeRoot<'src>, extra::Err<Rich<'tok, Tokens<'src>>>>
+-> impl Parser<'tok, I, FileTreeRoot, extra::Err<Rich<'tok, Tokens>>>
 where
-    I: ValueInput<'tok, Token = Tokens<'src>, Span = SimpleSpan>,
+    I: ValueInput<'tok, Token = Tokens, Span = SimpleSpan>,
 {
     statement_parser()
         .repeated()
@@ -71,18 +72,19 @@ where
         .map(FileTreeRoot::new)
 }
 
-pub fn parse<'tok>(
-    tokens: SpannedIter<'tok, Tokens<'tok>>,
+pub fn parse(
+    tokens: Vec<(Result<Tokens, ()>, Span)>,
     src_len: usize,
-) -> Result<FileTreeRoot<'tok>, Vec<Rich<'tok, Tokens<'tok>>>> {
-    // Greatly inspired from
+    error_symbol: &DefaultSymbol,
+) -> Result<FileTreeRoot, Vec<Rich<'_, Tokens>>> {
+    // Greatly inspired by
     // https://codeberg.org/zesterer/chumsky/src/branch/main/examples/logos.rs
     // Converts from a logos format to a chumsky format
     // See the example for full explanations
 
-    let iter = tokens.map(|(token, span)| match token {
+    let iter = tokens.into_iter().map(|(token, span)| match token {
         Ok(tok) => (tok, span.into()),
-        Err(()) => (Tokens::Error("?"), span.into()),
+        Err(()) => (Tokens::Error(*error_symbol), span.into()),
     });
 
     let token_stream = Stream::from_iter(iter).map((0..src_len).into(), |(t, s): (_, _)| (t, s));

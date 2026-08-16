@@ -4,9 +4,10 @@ use std::path::Path;
 use inkwell::context::Context as InkContext;
 use inkwell::{builder::Builder, module::Module};
 use log::trace;
-use miette::{Context, IntoDiagnostic, Result};
+use miette::{Context, IntoDiagnostic, Result, miette};
 
 use crate::ast::{nodes::FileTreeRoot, visitors::AstMutVisitor};
+use crate::interner::INTERNER;
 
 pub struct CodeGenerator<'ctx> {
     context: &'ctx InkContext,
@@ -59,11 +60,14 @@ impl AstMutVisitor<'_, ()> for CodeGenerator<'_> {
 
     fn visit_function_call(
         &mut self,
-        function_call: &crate::ast::nodes::calls::functions::FunctionCall<'_>,
+        function_call: &crate::ast::nodes::calls::functions::FunctionCall,
     ) -> Result<(), miette::Error> {
         trace!("Compiling a native function call");
 
-        let name = function_call.name;
+        let interner = INTERNER
+            .try_lock()
+            .map_err(|e| miette!("Unable to access interner: {}", e))?;
+        let name = interner.resolve(function_call.name).unwrap_or("ERROR");
         match name {
             "exit" => {
                 trace!("Found an exit call");

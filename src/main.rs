@@ -10,6 +10,8 @@ mod ast;
 mod cli;
 /// This module handles reading from inputs
 mod file;
+/// The global interner mutex
+mod interner;
 /// Used to lex the files
 mod lexer;
 /// To parse the tokens into an AST
