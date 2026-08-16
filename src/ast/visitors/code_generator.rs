@@ -1,7 +1,10 @@
 use std::fs::create_dir_all;
 use std::path::Path;
 
+use inkwell::basic_block::BasicBlock;
 use inkwell::context::Context as InkContext;
+use inkwell::module::Linkage;
+use inkwell::types::{BasicMetadataTypeEnum, BasicType, BasicTypeEnum};
 use inkwell::{builder::Builder, module::Module};
 use log::trace;
 use miette::{Context, IntoDiagnostic, Result, miette};
@@ -15,40 +18,67 @@ pub struct CodeGenerator<'ctx> {
     builder: Builder<'ctx>,
 }
 
-impl CodeGenerator<'_> {
-    pub fn compile(root: &FileTreeRoot, name: &str, folder: &str) -> Result<()> {
-        let context = InkContext::create();
-        let module = context.create_module(name);
-        let builder = context.create_builder();
+impl<'ctx> CodeGenerator<'ctx> {
+    fn goin(&self, block: BasicBlock) {
+        self.builder.position_at_end(block);
+    }
 
+    /// This function is made to be a simplified way to create fonctions
+    /// This is not a way to import fonctions
+    fn create_function(
+        &self,
+        name: &str,
+        return_type: BasicTypeEnum<'ctx>,
+        parameters_types: &[BasicMetadataTypeEnum<'ctx>],
+        is_var_args: bool,
+        linkage: Option<Linkage>,
+    ) -> Result<BasicBlock<'_>> {
+        let main_function_type = return_type.fn_type(parameters_types, is_var_args);
+        let main_function = self.module.add_function(name, main_function_type, linkage);
+        let main_block = self.context.append_basic_block(main_function, name);
+        Ok(main_block)
+    }
+
+    fn create_base(&self) -> Result<()> {
         // Create main function
         // TODO: add arguments
-        let main_function_type = context.i32_type().fn_type(&[], false);
-        let main_function = module.add_function("main", main_function_type, None);
-        let main_block = context.append_basic_block(main_function, "main");
-        builder.position_at_end(main_block);
+        let ret_type = self.context.i32_type().as_basic_type_enum();
+        let function = self.create_function("main", ret_type, &[], false, None)?;
+        self.goin(function);
+        Ok(())
+    }
 
-        let mut compiler = CodeGenerator {
-            context: &context,
-            module,
-            builder,
-        };
-        compiler.visit_file_tree_root(root)?;
-
+    fn save(&self, name: &str, folder: &str) -> Result<()> {
         let path = Path::new(folder).join(name).with_added_extension("ll");
         let parent = path.as_path().parent().context("No parent folder")?;
         create_dir_all(parent)
             .into_diagnostic()
             .context(format!("Cannot create folders for `{}`", name))?;
         let path_str = path.to_str().context("Invalid path format")?.to_owned();
-        compiler
-            .module
+        self.module
             .print_to_file(path)
             .into_diagnostic()
             .context(format!(
                 "Failed to save program in HIR format file {}",
                 path_str
             ))?;
+        Ok(())
+    }
+
+    pub fn compile(root: &FileTreeRoot, name: &str, folder: &str) -> Result<()> {
+        let context = InkContext::create();
+        let module = context.create_module(name);
+        let builder = context.create_builder();
+
+        let mut compiler = CodeGenerator {
+            context: &context,
+            module,
+            builder,
+        };
+        compiler.create_base()?;
+        compiler.visit_file_tree_root(root)?;
+        compiler.save(name, folder)?;
+
         Ok(())
     }
 }
