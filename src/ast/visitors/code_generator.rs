@@ -4,7 +4,8 @@ use std::path::Path;
 use inkwell::basic_block::BasicBlock;
 use inkwell::context::Context as InkContext;
 use inkwell::module::Linkage;
-use inkwell::types::{BasicMetadataTypeEnum, BasicType, BasicTypeEnum};
+use inkwell::types::{AnyTypeEnum, BasicMetadataTypeEnum, BasicType, BasicTypeEnum};
+use inkwell::values::FunctionValue;
 use inkwell::{builder::Builder, module::Module};
 use log::trace;
 use miette::{Context, IntoDiagnostic, Result, miette};
@@ -33,17 +34,42 @@ impl<'ctx> CodeGenerator<'ctx> {
         is_var_args: bool,
         linkage: Option<Linkage>,
     ) -> Result<BasicBlock<'_>> {
+        // TODO: add void type
         let main_function_type = return_type.fn_type(parameters_types, is_var_args);
         let main_function = self.module.add_function(name, main_function_type, linkage);
         let main_block = self.context.append_basic_block(main_function, name);
         Ok(main_block)
     }
 
+    fn import_function(
+        &self,
+        name: &str,
+        return_type: AnyTypeEnum<'ctx>,
+        parameters_types: &[BasicMetadataTypeEnum<'ctx>],
+        is_var_args: bool,
+        linkage: Option<Linkage>,
+    ) -> Result<FunctionValue<'_>> {
+        match return_type {
+            AnyTypeEnum::IntType(return_type) => {
+                let main_function_type = return_type.fn_type(parameters_types, is_var_args);
+                let main_function = self.module.add_function(name, main_function_type, linkage);
+                Ok(main_function)
+            }
+            // Same code...
+            AnyTypeEnum::VoidType(return_type) => {
+                let main_function_type = return_type.fn_type(parameters_types, is_var_args);
+                let main_function = self.module.add_function(name, main_function_type, linkage);
+                Ok(main_function)
+            }
+            _ => Err(miette!("Type not supported for return type")),
+        }
+    }
+
     fn create_base(&self) -> Result<()> {
         // Create main function
         // TODO: add arguments
-        let ret_type = self.context.i32_type().as_basic_type_enum();
-        let function = self.create_function("main", ret_type, &[], false, None)?;
+        let ret_type = self.context.i32_type();
+        let function = self.create_function("main", ret_type.into(), &[], false, None)?;
         self.goin(function);
         Ok(())
     }
@@ -103,11 +129,14 @@ impl AstMutVisitor<'_, ()> for CodeGenerator<'_> {
                 trace!("Found an exit call");
 
                 let argument_type = self.context.i32_type();
-                let exit_function_type = self
-                    .context
-                    .void_type()
-                    .fn_type(&[argument_type.into()], false);
-                let exit_function = self.module.add_function("exit", exit_function_type, None);
+                let return_type = self.context.void_type();
+                let exit_function = self.import_function(
+                    "exit",
+                    return_type.into(),
+                    &[argument_type.into()],
+                    false,
+                    None,
+                )?;
 
                 trace!("Function declared");
 
