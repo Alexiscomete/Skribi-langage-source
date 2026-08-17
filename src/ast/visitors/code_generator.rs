@@ -132,18 +132,24 @@ impl AstMutVisitor<'_, ()> for CodeGenerator<'_> {
         match name {
             "exit" => {
                 trace!("Found an exit call");
-
                 let argument_type = self.context.i32_type();
-                let return_type = self.context.void_type();
-                let exit_function = self.import_function(
-                    "exit",
-                    return_type.into(),
-                    &[argument_type.into()],
-                    false,
-                    None,
-                )?;
 
-                trace!("Function declared");
+                let exit_function = if let Some(func) = self.module.get_function(name) {
+                    func
+                } else {
+                    let return_type = self.context.void_type();
+                    let exit_function = self.import_function(
+                        "exit",
+                        return_type.into(),
+                        &[argument_type.into()],
+                        false,
+                        None,
+                    )?;
+
+                    trace!("Function declared");
+
+                    exit_function
+                };
 
                 // We might want to simplify this later
                 // Not enough data for now
