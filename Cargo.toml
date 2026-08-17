@@ -13,3 +13,4 @@ logos = "0.16.1"
 miette = { version = "7.6.0", features = ["fancy"] }
 thiserror = "2.0.19"
 string-interner = "0.20.0"
+insta = "1.48.0"
