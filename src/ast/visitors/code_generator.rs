@@ -53,6 +53,26 @@ impl<'ctx> CodeGenerator<'ctx> {
         Ok(main_function)
     }
 
+    fn get_or_import(
+        &self,
+        name: &str,
+        return_type: AnyTypeEnum<'ctx>,
+        parameters_types: &[BasicMetadataTypeEnum<'ctx>],
+        is_var_args: bool,
+        linkage: Option<Linkage>,
+    ) -> Result<FunctionValue<'_>> {
+        Ok(if let Some(func) = self.module.get_function(name) {
+            func
+        } else {
+            let func =
+                self.import_function(name, return_type, parameters_types, is_var_args, linkage)?;
+
+            trace!("Function {} declared", name);
+
+            func
+        })
+    }
+
     /// This function is made to be a simplified way to create fonctions
     /// This is not a way to import fonctions
     fn create_function(
@@ -134,22 +154,14 @@ impl AstMutVisitor<'_, ()> for CodeGenerator<'_> {
                 trace!("Found an exit call");
                 let argument_type = self.context.i32_type();
 
-                let exit_function = if let Some(func) = self.module.get_function(name) {
-                    func
-                } else {
-                    let return_type = self.context.void_type();
-                    let exit_function = self.import_function(
-                        "exit",
-                        return_type.into(),
-                        &[argument_type.into()],
-                        false,
-                        None,
-                    )?;
-
-                    trace!("Function declared");
-
-                    exit_function
-                };
+                let return_type = self.context.void_type();
+                let exit_function = self.get_or_import(
+                    "exit",
+                    return_type.into(),
+                    &[argument_type.into()],
+                    false,
+                    None,
+                )?;
 
                 // We might want to simplify this later
                 // Not enough data for now
