@@ -4,7 +4,7 @@ use std::path::Path;
 use inkwell::basic_block::BasicBlock;
 use inkwell::context::Context as InkContext;
 use inkwell::module::Linkage;
-use inkwell::types::{AnyTypeEnum, BasicMetadataTypeEnum, BasicType, BasicTypeEnum};
+use inkwell::types::{AnyTypeEnum, BasicMetadataTypeEnum, FunctionType};
 use inkwell::values::FunctionValue;
 use inkwell::{builder::Builder, module::Module};
 use log::trace;
@@ -24,21 +24,20 @@ impl<'ctx> CodeGenerator<'ctx> {
         self.builder.position_at_end(block);
     }
 
-    /// This function is made to be a simplified way to create fonctions
-    /// This is not a way to import fonctions
-    fn create_function(
-        &self,
-        name: &str,
-        return_type: BasicTypeEnum<'ctx>,
+    fn to_fn_type(
+        return_type: AnyTypeEnum<'ctx>,
         parameters_types: &[BasicMetadataTypeEnum<'ctx>],
         is_var_args: bool,
-        linkage: Option<Linkage>,
-    ) -> Result<BasicBlock<'_>> {
-        // TODO: add void type
-        let main_function_type = return_type.fn_type(parameters_types, is_var_args);
-        let main_function = self.module.add_function(name, main_function_type, linkage);
-        let main_block = self.context.append_basic_block(main_function, name);
-        Ok(main_block)
+    ) -> Result<FunctionType<'ctx>> {
+        Ok(match return_type {
+            AnyTypeEnum::IntType(return_type) => return_type.fn_type(parameters_types, is_var_args),
+            // Same code...
+            // Just the type is changed
+            AnyTypeEnum::VoidType(return_type) => {
+                return_type.fn_type(parameters_types, is_var_args)
+            }
+            _ => Err(miette!("Type not supported for return type"))?,
+        })
     }
 
     fn import_function(
@@ -49,20 +48,25 @@ impl<'ctx> CodeGenerator<'ctx> {
         is_var_args: bool,
         linkage: Option<Linkage>,
     ) -> Result<FunctionValue<'_>> {
-        match return_type {
-            AnyTypeEnum::IntType(return_type) => {
-                let main_function_type = return_type.fn_type(parameters_types, is_var_args);
-                let main_function = self.module.add_function(name, main_function_type, linkage);
-                Ok(main_function)
-            }
-            // Same code...
-            AnyTypeEnum::VoidType(return_type) => {
-                let main_function_type = return_type.fn_type(parameters_types, is_var_args);
-                let main_function = self.module.add_function(name, main_function_type, linkage);
-                Ok(main_function)
-            }
-            _ => Err(miette!("Type not supported for return type")),
-        }
+        let main_function_type = Self::to_fn_type(return_type, parameters_types, is_var_args)?;
+        let main_function = self.module.add_function(name, main_function_type, linkage);
+        Ok(main_function)
+    }
+
+    /// This function is made to be a simplified way to create fonctions
+    /// This is not a way to import fonctions
+    fn create_function(
+        &self,
+        name: &str,
+        return_type: AnyTypeEnum<'ctx>,
+        parameters_types: &[BasicMetadataTypeEnum<'ctx>],
+        is_var_args: bool,
+        linkage: Option<Linkage>,
+    ) -> Result<BasicBlock<'_>> {
+        // TODO: add void type
+        let main_function = self.import_function(name, return_type, parameters_types, is_var_args, linkage)?;
+        let main_block = self.context.append_basic_block(main_function, name);
+        Ok(main_block)
     }
 
     fn create_base(&self) -> Result<()> {
@@ -140,6 +144,8 @@ impl AstMutVisitor<'_, ()> for CodeGenerator<'_> {
 
                 trace!("Function declared");
 
+                // We might want to simplify this later
+                // Not enough data for now
                 let argument = argument_type.const_int(42, false);
                 self.builder
                     .build_call(exit_function, &[argument.into()], "call_exit")
