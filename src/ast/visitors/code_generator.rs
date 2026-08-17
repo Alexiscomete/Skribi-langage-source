@@ -64,7 +64,8 @@ impl<'ctx> CodeGenerator<'ctx> {
         linkage: Option<Linkage>,
     ) -> Result<BasicBlock<'_>> {
         // TODO: add void type
-        let main_function = self.import_function(name, return_type, parameters_types, is_var_args, linkage)?;
+        let main_function =
+            self.import_function(name, return_type, parameters_types, is_var_args, linkage)?;
         let main_block = self.context.append_basic_block(main_function, name);
         Ok(main_block)
     }
