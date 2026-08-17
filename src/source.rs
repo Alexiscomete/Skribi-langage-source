@@ -97,7 +97,7 @@ fn get_root<'root, 'file: 'root>(file: Arc<File>) -> Result<FileTreeRoot> {
 
 fn error_symbol() -> Result<DefaultSymbol> {
     let mut interner = INTERNER
-        .try_lock()
+        .lock()
         .map_err(|e| miette!("Unable to access interner: {}", e))?;
     Ok(interner.get_or_intern_static("?"))
 }

@@ -146,7 +146,7 @@ impl AstMutVisitor<'_, ()> for CodeGenerator<'_> {
         trace!("Compiling a native function call");
 
         let interner = INTERNER
-            .try_lock()
+            .lock()
             .map_err(|e| miette!("Unable to access interner: {}", e))?;
         let name = interner.resolve(function_call.name).unwrap_or("ERROR");
         match name {

@@ -43,14 +43,14 @@ pub enum Tokens {
 impl Display for Tokens {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         if let Self::Identifier(str) = self {
-            let interner = INTERNER.try_lock().map_err(|_| {
+            let interner = INTERNER.lock().map_err(|_| {
                 error!("Failed to get the lock");
                 Error
             })?;
             let name = interner.resolve(*str).unwrap_or("ERROR");
             write!(f, "{}", name)
         } else if let Self::Error(err) = self {
-            let interner = INTERNER.try_lock().map_err(|_| {
+            let interner = INTERNER.lock().map_err(|_| {
                 error!("Failed to get the lock");
                 Error
             })?;
@@ -83,7 +83,7 @@ impl Debug for Tokens {
 /// We must use a ref in this case
 pub fn tokenise(arg: &str) -> Result<Vec<(Result<Tokens, ()>, Span)>> {
     let mut interner = INTERNER
-        .try_lock()
+        .lock()
         .map_err(|e| miette!("Unable to access interner: {}", e))?;
 
     // Inspired from the logos example
@@ -93,4 +93,21 @@ pub fn tokenise(arg: &str) -> Result<Vec<(Result<Tokens, ()>, Span)>> {
         // Implies that everything is tokenised, however we cannot do anything
         // else as we have a mutable borrow of the interner
         .collect())
+}
+
+#[cfg(test)]
+mod test {
+    use insta::{assert_compact_debug_snapshot};
+
+    use crate::lexer::tokenise;
+
+    #[test]
+    fn tokenise_nothing() {
+        assert_compact_debug_snapshot!(tokenise("   \n\n \t  \n"));
+    }
+
+    #[test]
+    fn tokenise_hello_id() {
+        assert_compact_debug_snapshot!(tokenise("   \n\n \t hello \n"));
+    }
 }

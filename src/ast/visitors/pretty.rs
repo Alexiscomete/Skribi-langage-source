@@ -74,7 +74,7 @@ impl AstMutVisitor<'_, (), Error> for PrettyPrinterVisitor<'_, '_> {
     ) -> miette::Result<(), Error> {
         self.default_function_call(function_call)?;
 
-        let interner = INTERNER.try_lock().map_err(|_| {
+        let interner = INTERNER.lock().map_err(|_| {
             error!("Failed to get the lock");
             Error
         })?;

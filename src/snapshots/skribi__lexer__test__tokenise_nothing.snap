@@ -1,0 +1,5 @@
+---
+source: src/lexer.rs
+expression: "tokenise(\"   \\n\\n \\t  \\n\")"
+---
+Ok([])
