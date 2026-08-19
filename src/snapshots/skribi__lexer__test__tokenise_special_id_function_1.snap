@@ -1,0 +1,5 @@
+---
+source: src/lexer.rs
+expression: "tokenise(\"  \\t \\n \\t exit___ () \\n\")"
+---
+Ok([(Ok(<ID: exit___>), 8..15), (Ok(<(>), 16..17), (Ok(<)>), 17..18)])

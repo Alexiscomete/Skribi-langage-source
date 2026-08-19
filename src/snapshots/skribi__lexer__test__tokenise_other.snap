@@ -1,0 +1,5 @@
+---
+source: src/lexer.rs
+expression: "tokenise(\"  \\t \\n @\\t skr_app \\n\")"
+---
+Ok([(Ok(<ERR: @>), 6..7), (Ok(<skr_app>), 9..16)])

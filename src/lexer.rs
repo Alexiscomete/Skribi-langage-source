@@ -48,14 +48,14 @@ impl Display for Tokens {
                 Error
             })?;
             let name = interner.resolve(*str).unwrap_or("ERROR");
-            write!(f, "{}", name)
+            write!(f, "ID: {}", name)
         } else if let Self::Error(err) = self {
             let interner = INTERNER.lock().map_err(|_| {
                 error!("Failed to get the lock");
                 Error
             })?;
             let name = interner.resolve(*err).unwrap_or("ERROR");
-            write!(f, "{}", name)
+            write!(f, "ERR: {}", name)
         } else {
             write!(
                 f,
@@ -109,5 +109,20 @@ mod test {
     #[test]
     fn tokenise_hello_id() {
         assert_compact_debug_snapshot!(tokenise("   \n\n \t hello \n"));
+    }
+
+    #[test]
+    fn tokenise_special_id_function_1() {
+        assert_compact_debug_snapshot!(tokenise("  \t \n \t exit___ () \n"));
+    }
+
+    #[test]
+    fn tokenise_special_id_function_2() {
+        assert_compact_debug_snapshot!(tokenise("  \t \n \t exit_() \n"));
+    }
+
+    #[test]
+    fn tokenise_other() {
+        assert_compact_debug_snapshot!(tokenise("  \t \n @\t skr_app \n"));
     }
 }
