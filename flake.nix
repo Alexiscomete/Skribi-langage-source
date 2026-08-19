@@ -52,6 +52,9 @@
             rustfmt
             rustc
             clang
+            # For code coverage
+            pkg-config
+            openssl
           ];
         };
       }
