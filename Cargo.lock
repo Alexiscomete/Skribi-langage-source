@@ -768,6 +768,7 @@ dependencies = [
  "logos",
  "miette",
  "string-interner",
+ "tempfile",
  "thiserror",
 ]
 
