@@ -17,6 +17,7 @@ pub struct CodeGenerator<'ctx> {
     context: &'ctx InkContext,
     module: Module<'ctx>,
     builder: Builder<'ctx>,
+    main_empty: bool,
 }
 
 impl<'ctx> CodeGenerator<'ctx> {
@@ -116,6 +117,33 @@ impl<'ctx> CodeGenerator<'ctx> {
         Ok(())
     }
 
+    fn build_exit_call(&self, code: u64) -> Result<(), miette::Error> {
+        let argument_type = self.context.i32_type();
+
+        let return_type = self.context.void_type();
+        let exit_function = self.get_or_import(
+            "exit",
+            return_type.into(),
+            &[argument_type.into()],
+            false,
+            None,
+        )?;
+
+        // We might want to simplify this later
+        // Not enough data for now
+        let argument = argument_type.const_int(code, false);
+        self.builder
+            .build_call(exit_function, &[argument.into()], "call_exit")
+            .into_diagnostic()
+            .context("While creating call to exit")?;
+        self.builder
+            .build_unreachable()
+            .into_diagnostic()
+            .context("While creating unreachable end of branch")?;
+
+        Ok(())
+    }
+
     pub fn compile(root: &FileTreeRoot, name: &str, folder: &str) -> Result<()> {
         let context = InkContext::create();
         let module = context.create_module(name);
@@ -125,9 +153,15 @@ impl<'ctx> CodeGenerator<'ctx> {
             context: &context,
             module,
             builder,
+            main_empty: true,
         };
         compiler.create_base()?;
         compiler.visit_file_tree_root(root)?;
+
+        if compiler.main_empty {
+            compiler.build_exit_call(0)?;
+        }
+
         compiler.save(name, folder)?;
 
         Ok(())
@@ -154,29 +188,8 @@ impl AstMutVisitor<'_, ()> for CodeGenerator<'_> {
         match name {
             "exit" => {
                 trace!("Found an exit call");
-                let argument_type = self.context.i32_type();
-
-                let return_type = self.context.void_type();
-                let exit_function = self.get_or_import(
-                    "exit",
-                    return_type.into(),
-                    &[argument_type.into()],
-                    false,
-                    None,
-                )?;
-
-                // We might want to simplify this later
-                // Not enough data for now
-                let argument = argument_type.const_int(42, false);
-                self.builder
-                    .build_call(exit_function, &[argument.into()], "call_exit")
-                    .into_diagnostic()
-                    .context("While creating call to exit")?;
-                self.builder
-                    .build_unreachable()
-                    .into_diagnostic()
-                    .context("While creating unreachable end of branch")?;
-
+                self.build_exit_call(42)?;
+                self.main_empty = false;
                 trace!("Function called");
 
                 Ok(())

@@ -17,7 +17,7 @@ pub(crate) struct Build {
     #[arg(short, long, default_value = ".skribi")]
     compile_path: String,
     /// Sets the name of the output program.
-    #[arg(short, long, default_value = ".skribi/out")]
+    #[arg(short, long, default_value = ".skribi/result.out")]
     output: String,
 }
 
@@ -118,4 +118,53 @@ pub(crate) struct Arguments {
     pub(crate) verbose: Option<LevelFilter>,
     #[clap(subcommand)]
     pub cmd: Command,
+}
+
+#[cfg(test)]
+mod test {
+    use std::{io::Write, path::PathBuf, process::Command};
+
+    use tempfile::{NamedTempFile, TempDir, tempdir};
+
+    use crate::cli::Build;
+
+    fn compile(content: &str) -> (TempDir, PathBuf) {
+        // .lls files dir
+        let out = tempdir().unwrap();
+        let mut src = NamedTempFile::new().unwrap();
+
+        write!(src, "{}", content).unwrap();
+
+        let bin = out.path().join("result.out");
+        let build = Build {
+            source: Some(src.path().to_str().unwrap().into()),
+            compile_path: out.path().to_str().unwrap().into(),
+            output: bin.to_str().unwrap().into(),
+        };
+
+        build.execute().unwrap();
+
+        // Returning out allows to avoid the drop and removal of the tempdir
+        (out, bin)
+    }
+
+    #[test]
+    fn test_full_exit_program() {
+        // _dir is used instead of _ to avoid the drop
+        let (_dir, bin) = compile("exit()");
+        let res = Command::new(bin)
+            .status()
+            .unwrap();
+        assert_eq!(res.code().unwrap(), 42);
+    }
+
+    #[test]
+    fn test_full_deprecated_program() {
+        // _dir is used instead of _ to avoid the drop
+        let (_dir, bin) = compile("skr_app");
+        let res = Command::new(bin)
+            .status()
+            .unwrap();
+        assert_eq!(res.code().unwrap(), 0);
+    }
 }

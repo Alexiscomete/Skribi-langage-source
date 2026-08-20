@@ -66,7 +66,7 @@ pub struct SourceManager {
 }
 
 fn link_files(inputs: Vec<String>, output: &str) -> Result<()> {
-    let output = Path::new(output).with_added_extension("out");
+    let output = Path::new(output);
     let command = Command::new("clang")
         // For nix
         .arg("-Wno-unused-command-line-argument")
