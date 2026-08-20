@@ -1,15 +1,10 @@
 use std::{collections::HashMap, path::Path, process::Command};
 
-use chumsky::error::Rich;
 use log::{debug, info, trace, warn};
 use miette::{
-    Context, Diagnostic, IntoDiagnostic, LabeledSpan, NamedSource, Report, Result, SourceSpan,
-    miette,
+    Context, IntoDiagnostic, Report, Result,
 };
 use std::sync::Arc;
-
-use string_interner::DefaultSymbol;
-use thiserror::Error;
 
 use crate::{
     ast::{
@@ -17,8 +12,7 @@ use crate::{
         visitors::{code_generator::CodeGenerator, deprecated::DeprecatedNodesVisitor},
     },
     file::File,
-    interner::INTERNER,
-    lexer::{Tokens, tokenise},
+    lexer::tokenise,
     parse::parse,
 };
 
@@ -30,53 +24,6 @@ pub struct Source {
     root: FileTreeRoot,
 }
 
-#[derive(Error, Debug, Diagnostic)]
-#[error("{message}")]
-#[diagnostic()]
-struct ParsingSingleError {
-    message: String,
-    #[label(primary, "{span_message}")]
-    span: SourceSpan,
-    span_message: String,
-    #[label(collection)]
-    spans: Vec<LabeledSpan>,
-}
-
-#[derive(Error, Debug, Diagnostic)]
-#[error("Parsing error")]
-#[diagnostic(help("Always try to fix the first parsing error as they might be cascades"))]
-struct ParsingErrors {
-    #[source_code]
-    src: NamedSource<Arc<str>>,
-    #[related]
-    related: Vec<ParsingSingleError>,
-}
-
-fn convert_to_err(file: &File, errs: Vec<Rich<'_, Tokens>>) -> ParsingErrors {
-    // Greatly inspired from
-    // https://codeberg.org/zesterer/chumsky/src/branch/main/examples/nano_rust.rs
-    ParsingErrors {
-        src: file.create_source(),
-        related: errs
-            .iter()
-            .map(|err| ParsingSingleError {
-                message: err.to_string(),
-                span: err.span().into_range().into(),
-                span_message: err.reason().to_string(),
-                spans: err
-                    .contexts()
-                    .map(|(label, span)| {
-                        LabeledSpan::new_with_span(
-                            Some(format!("parsing {label}")),
-                            span.into_range(),
-                        )
-                    })
-                    .collect(),
-            })
-            .collect(),
-    }
-}
-
 fn get_root<'root, 'file: 'root>(file: Arc<File>) -> Result<FileTreeRoot> {
     let tokens = tokenise(&file.content).context("Failed to tokenise the input")?;
     let size = tokens.len();
@@ -86,21 +33,14 @@ fn get_root<'root, 'file: 'root>(file: Arc<File>) -> Result<FileTreeRoot> {
     );
 
     // Not able to log tokens without consuming them (ownership)
-    let error_symbol = error_symbol()?;
-    parse(tokens, file.content.len(), &error_symbol)
-        .map_err(|errs| convert_to_err(&file, errs).into())
+    parse(tokens, file.content.len())
+        .map_err(|errs| errs.with_source_code(file.create_source()))
         .map(|mut root| {
             root.file = Some(file.clone());
             root
         })
 }
 
-fn error_symbol() -> Result<DefaultSymbol> {
-    let mut interner = INTERNER
-        .lock()
-        .map_err(|e| miette!("Unable to access interner: {}", e))?;
-    Ok(interner.get_or_intern_static("?"))
-}
 
 impl Source {
     pub fn new(file: Arc<File>) -> Result<Source> {

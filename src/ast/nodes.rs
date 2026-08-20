@@ -7,6 +7,7 @@ pub mod deprecated;
 pub mod expressions;
 pub mod statements;
 
+#[derive(Debug)]
 pub struct FileTreeRoot {
     pub content: Vec<Statement>,
     pub file: Option<Arc<File>>,

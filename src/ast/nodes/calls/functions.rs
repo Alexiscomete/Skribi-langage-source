@@ -4,7 +4,7 @@ use string_interner::DefaultSymbol;
 /// Represent a call to a function.
 /// TODO: add arguments.
 /// TODO: replace name with a full path.
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Clone, Debug)]
 pub struct FunctionCall {
     pub name: DefaultSymbol,
     pub span: SimpleSpan,

@@ -7,6 +7,7 @@ use miette::{Context, IntoDiagnostic, NamedSource, Result};
 /// Arcs avoid this footprint.
 /// Used in many cases, even in this file.
 /// Avoids lifetime and allows acceptable file cloning.
+#[derive(Debug)]
 pub struct File {
     pub(crate) name: Arc<str>,
     pub(crate) content: Arc<str>,
