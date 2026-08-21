@@ -1,0 +1,35 @@
+---
+source: tests/exit.rs
+info:
+  program: skribi
+  args:
+    - build
+    - resources/test_programs/fixed_exit.skrb
+---
+success: true
+exit_code: 0
+----- stdout -----
+
+----- stderr -----
+[WARN  skribi::source] Warning:   ⚠ Found deprecated parsing features
+       ╭─[resources/test_programs/fixed_exit.skrb:1:1]
+     1 │ skr_app exit()
+       · ───┬───
+       ·    ╰── skr_app should not be used
+     2 │ exit()exit()
+     3 │ exit() skr_app
+       ·        ───┬───
+       ·           ╰── skr_app should not be used
+     4 │ exit ()
+       ╰────
+        ╭─[resources/test_programs/fixed_exit.skrb:10:1]
+      9 │ )
+     10 │ skr_app skr_app
+        · ───┬─── ───┬───
+        ·    │       ╰── skr_app should not be used
+        ·    ╰── skr_app should not be used
+     11 │ exit()
+        ╰────
+    
+warning: overriding the module target triple with x86_64-unknown-linux-gnu [-Woverride-module]
+1 warning generated.

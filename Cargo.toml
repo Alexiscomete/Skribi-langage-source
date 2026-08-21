@@ -19,3 +19,8 @@ thiserror = "2.0.19"
 [dev-dependencies]
 insta = "1.48.0"
 tempfile = "3.27.0"
+insta-cmd = "0.7.0"
+
+# From the doc of insta
+[profile.dev.package]
+insta.opt-level = 3

@@ -37,6 +37,8 @@ fn main() -> Result<()> {
             .write_style("SKRIBI_C_LOG_STYLE"),
     );
 
+    logger.format_timestamp(None);
+
     // Allows to render panics using miette
     // Allows an uniform representation of errors
     set_panic_hook();
@@ -65,3 +67,4 @@ fn main() -> Result<()> {
 
     args.cmd.execute()
 }
+

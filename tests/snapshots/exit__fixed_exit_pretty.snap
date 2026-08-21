@@ -1,0 +1,40 @@
+---
+source: tests/exit.rs
+info:
+  program: skribi
+  args:
+    - pretty
+    - resources/test_programs/fixed_exit.skrb
+---
+success: true
+exit_code: 0
+----- stdout -----
+File resources/test_programs/fixed_exit.skrb AST is:
+DEPRECATED [skr_app should not be used]
+(
+    exit()
+)
+(
+    exit()
+)
+(
+    exit()
+)
+(
+    exit()
+)
+DEPRECATED [skr_app should not be used]
+(
+    exit()
+)
+(
+    exit()
+)
+DEPRECATED [skr_app should not be used]
+DEPRECATED [skr_app should not be used]
+(
+    exit()
+)
+
+
+----- stderr -----

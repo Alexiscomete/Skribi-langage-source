@@ -152,9 +152,7 @@ mod test {
     fn test_full_exit_program() {
         // _dir is used instead of _ to avoid the drop
         let (_dir, bin) = compile("exit()");
-        let res = Command::new(bin)
-            .status()
-            .unwrap();
+        let res = Command::new(bin).status().unwrap();
         assert_eq!(res.code().unwrap(), 42);
     }
 
@@ -162,9 +160,7 @@ mod test {
     fn test_full_deprecated_program() {
         // _dir is used instead of _ to avoid the drop
         let (_dir, bin) = compile("skr_app");
-        let res = Command::new(bin)
-            .status()
-            .unwrap();
+        let res = Command::new(bin).status().unwrap();
         assert_eq!(res.code().unwrap(), 0);
     }
 }

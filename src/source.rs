@@ -88,7 +88,7 @@ impl SourceManager {
         debug!("Adding file {} into source files", file.name);
         self.files.insert(
             file.name.clone(),
-            Source::new(file).context("Failed parse the file")?,
+            Source::new(file).context("Failed to parse the file")?,
         );
         Ok(())
     }
