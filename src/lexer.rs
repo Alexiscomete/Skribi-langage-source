@@ -97,7 +97,7 @@ pub fn tokenise(arg: &str) -> Result<Vec<(Result<Tokens, ()>, Span)>> {
 
 #[cfg(test)]
 mod test {
-    use insta::{assert_compact_debug_snapshot};
+    use insta::assert_compact_debug_snapshot;
 
     use crate::lexer::tokenise;
 

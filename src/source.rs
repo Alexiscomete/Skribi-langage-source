@@ -1,9 +1,7 @@
 use std::{collections::HashMap, path::Path, process::Command};
 
 use log::{debug, info, trace, warn};
-use miette::{
-    Context, IntoDiagnostic, Report, Result,
-};
+use miette::{Context, IntoDiagnostic, Report, Result};
 use std::sync::Arc;
 
 use crate::{
@@ -40,7 +38,6 @@ fn get_root<'root, 'file: 'root>(file: Arc<File>) -> Result<FileTreeRoot> {
             root
         })
 }
-
 
 impl Source {
     pub fn new(file: Arc<File>) -> Result<Source> {

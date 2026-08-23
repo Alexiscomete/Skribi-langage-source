@@ -148,7 +148,9 @@ impl AstMutVisitor<'_, ()> for CodeGenerator<'_> {
         let interner = INTERNER
             .lock()
             .map_err(|e| miette!("Unable to access interner: {}", e))?;
-        let name = interner.resolve(function_call.name).unwrap_or("ERROR");
+        let name = interner
+            .resolve(function_call.name.into())
+            .unwrap_or("ERROR");
         match name {
             "exit" => {
                 trace!("Found an exit call");

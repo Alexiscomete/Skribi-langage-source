@@ -1,0 +1,5 @@
+---
+source: src/parse.rs
+expression: "parse(tokens, src.len())"
+---
+Ok(FileTreeRoot { content: [Expression(FunctionCall(FunctionCall { name: exit, span: 0..6 }))], file: None })

@@ -126,10 +126,7 @@ fn convert_to_err(errs: Vec<Rich<'_, Tokens>>) -> ParsingErrors {
     }
 }
 
-pub fn parse<'a>(
-    tokens: Vec<(Result<Tokens, ()>, Span)>,
-    src_len: usize,
-) -> Result<FileTreeRoot> {
+pub fn parse(tokens: Vec<(Result<Tokens, ()>, Span)>, src_len: usize) -> Result<FileTreeRoot> {
     // Greatly inspired by
     // https://codeberg.org/zesterer/chumsky/src/branch/main/examples/logos.rs
     // Converts from a logos format to a chumsky format
@@ -139,12 +136,15 @@ pub fn parse<'a>(
 
     let iter = tokens.into_iter().map(|(token, span)| match token {
         Ok(tok) => (tok, span.into()),
-        Err(()) => (Tokens::Error(error_symbol.clone()), span.into()),
+        Err(()) => (Tokens::Error(error_symbol), span.into()),
     });
 
     let token_stream = Stream::from_iter(iter).map((0..src_len).into(), |(t, s): (_, _)| (t, s));
 
-    root_parser().parse(token_stream).into_result().map_err(|errs| convert_to_err(errs).into())
+    root_parser()
+        .parse(token_stream)
+        .into_result()
+        .map_err(|errs| convert_to_err(errs).into())
 }
 
 #[cfg(test)]
@@ -155,6 +155,20 @@ mod test {
     #[test]
     fn parse_skr_app() {
         let src = "skr_app";
+        let tokens = tokenise(src).unwrap();
+        assert_compact_debug_snapshot!(parse(tokens, src.len()));
+    }
+
+    #[test]
+    fn parse_exit() {
+        let src = "exit()";
+        let tokens = tokenise(src).unwrap();
+        assert_compact_debug_snapshot!(parse(tokens, src.len()));
+    }
+
+    #[test]
+    fn parse_other() {
+        let src = "other   () skr_app";
         let tokens = tokenise(src).unwrap();
         assert_compact_debug_snapshot!(parse(tokens, src.len()));
     }

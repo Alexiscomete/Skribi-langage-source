@@ -1,0 +1,5 @@
+---
+source: src/parse.rs
+expression: "parse(tokens, src.len())"
+---
+Ok(FileTreeRoot { content: [Expression(FunctionCall(FunctionCall { name: other, span: 0..10 })), Deprecated(Deprecated { message: "skr_app should not be used", span: 11..18 })], file: None })
