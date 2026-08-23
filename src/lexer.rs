@@ -32,6 +32,8 @@ pub enum Tokens {
 
     /// Note: no need of them in parsing
     #[regex(r"[ \t\n]+", logos::skip)]
+    #[regex(r"//[^\n]*\n", logos::skip, allow_greedy = true)]
+    #[regex(r"/\*([^\*]/?|\*[^/])*\*?\*/", logos::skip)]
     Ignore,
 
     /// Any character not used by other tokens,
@@ -124,5 +126,45 @@ mod test {
     #[test]
     fn tokenise_other() {
         assert_compact_debug_snapshot!(tokenise("  \t \n @\t skr_app \n"));
+    }
+
+    #[test]
+    fn tokenise_comment_u1_e1() {
+        assert_compact_debug_snapshot!(tokenise("skr_app // skr_app\nskr_app"));
+    }
+
+    #[test]
+    fn tokenise_comment_u1_e2() {
+        assert_compact_debug_snapshot!(tokenise("skr_app /// skr_app // skr_app // \nskr_app"));
+    }
+
+    #[test]
+    fn tokenise_comment_u2_e1() {
+        assert_compact_debug_snapshot!(tokenise("skr_app /* skr_app \n skr_app */ skr_app"));
+    }
+
+    #[test]
+    fn tokenise_comment_u2_e2() {
+        assert_compact_debug_snapshot!(tokenise("skr_app /* skr_app * skr_app */ skr_app"));
+    }
+
+    #[test]
+    fn tokenise_comment_u2_e3() {
+        assert_compact_debug_snapshot!(tokenise("skr_app /* skr_app / skr_app */ skr_app"));
+    }
+
+    #[test]
+    fn tokenise_comment_u2_e4() {
+        assert_compact_debug_snapshot!(tokenise("skr_app /* skr_app /* skr_app */ skr_app"));
+    }
+
+    #[test]
+    fn tokenise_comment_u2_e5() {
+        assert_compact_debug_snapshot!(tokenise("skr_app /* skr_app * / skr_app */ skr_app"));
+    }
+
+    #[test]
+    fn tokenise_comment_u2_e6() {
+        assert_compact_debug_snapshot!(tokenise("skr_app /** skr_app * / skr_app **/ skr_app"));
     }
 }

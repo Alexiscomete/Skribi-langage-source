@@ -1,0 +1,5 @@
+---
+source: src/lexer.rs
+expression: "tokenise(\"skr_app /* skr_app \\n skr_app */ skr_app\")"
+---
+Ok([(Ok(<skr_app>), 0..7), (Ok(<skr_app>), 32..39)])
