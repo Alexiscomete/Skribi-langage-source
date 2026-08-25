@@ -6,7 +6,11 @@ use std::{
 use log::error;
 use string_interner::DefaultSymbol;
 
-use crate::{ast::nodes::statements::Statement, file::File, interner::INTERNER};
+use crate::{
+    ast::nodes::statements::Statement,
+    file::File,
+    interner::{INTERNER, Interner},
+};
 
 pub mod calls;
 pub mod deprecated;
@@ -43,6 +47,10 @@ impl From<SymbolWrapper> for DefaultSymbol {
     fn from(val: SymbolWrapper) -> Self {
         val.symbol
     }
+}
+
+pub fn into_str<'a>(interner: &'a Interner, symbol: SymbolWrapper) -> &'a str {
+    interner.resolve(symbol.into()).unwrap_or("ERROR")
 }
 
 impl Debug for SymbolWrapper {

@@ -10,8 +10,9 @@ use inkwell::{builder::Builder, module::Module};
 use log::trace;
 use miette::{Context, IntoDiagnostic, Result, miette};
 
+use crate::ast::nodes::into_str;
 use crate::ast::{nodes::FileTreeRoot, visitors::AstMutVisitor};
-use crate::interner::INTERNER;
+use crate::interner::get_interner;
 
 pub struct CodeGenerator<'ctx> {
     context: &'ctx InkContext,
@@ -179,12 +180,8 @@ impl AstMutVisitor<'_, ()> for CodeGenerator<'_> {
     ) -> Result<(), miette::Error> {
         trace!("Compiling a native function call");
 
-        let interner = INTERNER
-            .lock()
-            .map_err(|e| miette!("Unable to access interner: {}", e))?;
-        let name = interner
-            .resolve(function_call.name.into())
-            .unwrap_or("ERROR");
+        let interner = get_interner()?;
+        let name = into_str(&interner, function_call.name);
         match name {
             "exit" => {
                 trace!("Found an exit call");

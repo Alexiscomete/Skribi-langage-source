@@ -28,17 +28,17 @@ impl AstMutVisitor<'_, ()> for DeprecatedNodesVisitor {
 #[derive(Error, Debug, Diagnostic)]
 #[error("Found deprecated parsing features")]
 #[diagnostic(severity(Warning))]
-pub struct DeprecatedError {
+pub struct DeprecatedWarning {
     #[label(collection)]
     spans: Vec<LabeledSpan>,
 }
 
 impl DeprecatedNodesVisitor {
-    pub fn find(file_tree_root: &FileTreeRoot) -> Result<Option<DeprecatedError>> {
+    pub fn find(file_tree_root: &FileTreeRoot) -> Result<Option<DeprecatedWarning>> {
         let mut visitor = DeprecatedNodesVisitor::default();
         visitor.visit_file_tree_root(file_tree_root)?;
         if !visitor.spans.is_empty() {
-            Ok(Some(DeprecatedError {
+            Ok(Some(DeprecatedWarning {
                 spans: visitor.spans,
             }))
         } else {

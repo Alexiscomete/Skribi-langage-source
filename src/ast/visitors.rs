@@ -29,7 +29,9 @@ use miette::Result;
 
 pub mod code_generator;
 pub mod deprecated;
+pub mod into_span;
 pub mod pretty;
+pub mod unreachable;
 
 /// A enum that indicated why we need the default value of T.
 pub enum DefaultCause {

@@ -35,7 +35,7 @@ fn create_skribi_directory(path: &str) -> Result<()> {
 impl Build {
     /// Compile the source code
     pub(crate) fn execute(self) -> Result<()> {
-        self.action(|build, manager| manager.compile(&build.compile_path, &build.output))
+        self.action(|build, mut manager| manager.compile(&build.compile_path, &build.output))
     }
 
     pub(crate) fn action(self, action: fn(Build, SourceManager) -> Result<()>) -> Result<()> {

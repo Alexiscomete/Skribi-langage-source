@@ -1,8 +1,16 @@
-use std::sync::{LazyLock, Mutex};
+use std::sync::{LazyLock, Mutex, MutexGuard};
 
+use miette::{Result, miette};
 use string_interner::DefaultStringInterner;
+
+pub type Interner = LazyLock<DefaultStringInterner>;
 
 /// WARNING: when possible, passing as an argument in prefered
 /// Access the lock once if possible
-pub static INTERNER: Mutex<LazyLock<DefaultStringInterner>> =
-    Mutex::new(LazyLock::new(DefaultStringInterner::default));
+pub static INTERNER: Mutex<Interner> = Mutex::new(LazyLock::new(DefaultStringInterner::default));
+
+pub fn get_interner() -> Result<MutexGuard<'static, Interner>> {
+    INTERNER
+        .lock()
+        .map_err(|e| miette!("Unable to access interner: {}", e))
+}

@@ -13,8 +13,8 @@ macro_rules! cli {
 fn test_fixed_exit_build() {
     assert_cmd_snapshot!(
         cli!()
-        .arg("build")
-        .arg("resources/test_programs/fixed_exit.skrb")
+            .arg("build")
+            .arg("resources/test_programs/fixed_exit.skrb")
     )
 }
 
@@ -22,25 +22,21 @@ fn test_fixed_exit_build() {
 fn test_fixed_exit_pretty() {
     assert_cmd_snapshot!(
         cli!()
-        .arg("pretty")
-        .arg("resources/test_programs/fixed_exit.skrb")
+            .arg("pretty")
+            .arg("resources/test_programs/fixed_exit.skrb")
     )
 }
 
 #[test]
 fn test_exit_build() {
-    assert_cmd_snapshot!(
-        cli!()
-        .arg("build")
-        .arg("resources/test_programs/exit.skrb")
-    )
+    assert_cmd_snapshot!(cli!().arg("build").arg("resources/test_programs/exit.skrb"))
 }
 
 #[test]
 fn test_exit_pretty() {
     assert_cmd_snapshot!(
         cli!()
-        .arg("pretty")
-        .arg("resources/test_programs/exit.skrb")
+            .arg("pretty")
+            .arg("resources/test_programs/exit.skrb")
     )
 }

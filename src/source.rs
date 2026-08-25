@@ -7,7 +7,10 @@ use std::sync::Arc;
 use crate::{
     ast::{
         nodes::FileTreeRoot,
-        visitors::{code_generator::CodeGenerator, deprecated::DeprecatedNodesVisitor},
+        visitors::{
+            code_generator::CodeGenerator, deprecated::DeprecatedNodesVisitor,
+            unreachable::UnreachableVisitor,
+        },
     },
     file::File,
     lexer::tokenise,
@@ -46,11 +49,17 @@ impl Source {
         Ok(Source { file, root })
     }
 
-    pub fn compile(&self, folder: &str) -> Result<()> {
+    pub fn compile(&mut self, folder: &str) -> Result<()> {
         // Placeholder for later checks
         // May be moved later to the new function
         // Only do not do too much on a pull request
         if let Some(error) = DeprecatedNodesVisitor::find(&self.root)? {
+            let report: Report = error.into();
+            let report = report.with_source_code(self.file.create_source());
+            warn!("Warning: {:?}", report);
+        }
+
+        if let Some(error) = UnreachableVisitor::find(&mut self.root)? {
             let report: Report = error.into();
             let report = report.with_source_code(self.file.create_source());
             warn!("Warning: {:?}", report);
@@ -93,10 +102,10 @@ impl SourceManager {
         Ok(())
     }
 
-    pub fn compile(&self, folder: &str, output: &str) -> Result<()> {
+    pub fn compile(&mut self, folder: &str, output: &str) -> Result<()> {
         trace!("Start compiling sources");
         let mut paths = vec![];
-        for (name, file) in &self.files {
+        for (name, file) in &mut self.files {
             info!("Compiling `{}`", name);
             file.compile(folder)?;
             let name = Path::new(".skribi")

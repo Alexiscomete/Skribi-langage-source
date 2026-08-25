@@ -67,4 +67,3 @@ fn main() -> Result<()> {
 
     args.cmd.execute()
 }
-
