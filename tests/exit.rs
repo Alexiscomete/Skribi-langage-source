@@ -19,6 +19,15 @@ fn test_fixed_exit_build() {
 }
 
 #[test]
+fn test_fixed_perfect_build() {
+    assert_cmd_snapshot!(
+        cli!()
+            .arg("build")
+            .arg("resources/test_programs/perfect_exit.skrb")
+    )
+}
+
+#[test]
 fn test_fixed_exit_pretty() {
     assert_cmd_snapshot!(
         cli!()
