@@ -1,0 +1,5 @@
+---
+source: src/lexer.rs
+expression: "tokenise(\" 028 9022222222216 0\")"
+---
+Ok([(Ok(<NUM: 0>), 1..2), (Ok(<NUM: 28>), 2..4), (Ok(<NUM: 9022222222216>), 5..18), (Ok(<NUM: 0>), 19..20)])

@@ -1,0 +1,5 @@
+---
+source: src/lexer.rs
+expression: "tokenise(\" 0  \")"
+---
+Ok([(Ok(<NUM: 0>), 1..2)])

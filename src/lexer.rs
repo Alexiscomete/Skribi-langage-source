@@ -30,6 +30,10 @@ pub enum Tokens {
     #[token(")")]
     RightParenthesis,
 
+    // Simple numbers for now
+    #[regex(r"0|[1-9][0-9]*", |lex| lex.extras.get_or_intern(lex.slice()))]
+    Number(DefaultSymbol),
+
     /// Note: no need of them in parsing
     #[regex(r"[ \t\n]+", logos::skip)]
     #[regex(r"//[^\n]*\n", logos::skip, allow_greedy = true)]
@@ -58,6 +62,13 @@ impl Display for Tokens {
             })?;
             let name = interner.resolve(*err).unwrap_or("ERROR");
             write!(f, "ERR: {}", name)
+        } else if let Self::Number(num) = self {
+            let interner = INTERNER.lock().map_err(|_| {
+                error!("Failed to get the lock");
+                Error
+            })?;
+            let name = interner.resolve(*num).unwrap_or("ERROR");
+            write!(f, "NUM: {}", name)
         } else {
             write!(
                 f,
@@ -126,6 +137,26 @@ mod test {
     #[test]
     fn tokenise_other() {
         assert_compact_debug_snapshot!(tokenise("  \t \n @\t skr_app \n"));
+    }
+
+    #[test]
+    fn tokenise_number() {
+        assert_compact_debug_snapshot!(tokenise(" 0  "));
+    }
+
+    #[test]
+    fn tokenise_numbers() {
+        assert_compact_debug_snapshot!(tokenise(" 090  "));
+    }
+
+    #[test]
+    fn tokenise_numbers_multiple() {
+        assert_compact_debug_snapshot!(tokenise(" 028 9022222222216 0"));
+    }
+
+    #[test]
+    fn tokenise_numbers_long() {
+        assert_compact_debug_snapshot!(tokenise("1345627890012365481354766"));
     }
 
     #[test]

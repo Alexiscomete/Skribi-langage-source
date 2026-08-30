@@ -1,0 +1,5 @@
+---
+source: src/lexer.rs
+expression: "tokenise(\" 090  \")"
+---
+Ok([(Ok(<NUM: 0>), 1..2), (Ok(<NUM: 90>), 2..4)])
