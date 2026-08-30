@@ -33,7 +33,7 @@ where
         .labelled("function call body");
 
     base.then_ignore(call)
-        .map_with(|base, extra| FunctionCall::new(base, extra.span()))
+        .map_with(|base, extra| FunctionCall::new(base, extra.span(), None))
         .labelled("function call")
         .as_context()
 }

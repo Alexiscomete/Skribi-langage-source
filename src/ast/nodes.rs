@@ -16,6 +16,7 @@ pub mod calls;
 pub mod deprecated;
 pub mod expressions;
 pub mod statements;
+pub mod numbers;
 
 #[derive(Debug)]
 pub struct FileTreeRoot {

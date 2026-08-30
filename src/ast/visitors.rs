@@ -21,6 +21,7 @@
 //! Visitors are the heart of a compiler.
 
 use crate::ast::nodes::FileTreeRoot;
+use crate::ast::nodes::numbers::Number;
 use crate::ast::nodes::calls::functions::FunctionCall;
 use crate::ast::nodes::deprecated::Deprecated;
 use crate::ast::nodes::expressions::Expression;
@@ -38,6 +39,7 @@ pub enum DefaultCause {
     ZeroElements,
     Deprecated,
     FunctionCall,
+    Number,
 }
 
 // I think I have chosen an evil syntax, but the result is nice
@@ -130,6 +132,7 @@ macro_rules! make_ast_visitor {
             ) -> Result<T, R> {
                 match expression {
                     Expression::FunctionCall(function_call) => self.visit_function_call(function_call),
+                    Expression::Number(number) => self.visit_number(number),
                 }
             }
 
@@ -142,11 +145,28 @@ macro_rules! make_ast_visitor {
 
             fn default_function_call(
                 &$($self_mutable)? self,
-                // Remove this when adding arguments and full path
-                #[allow(unused)]
                 function_call: &$($mutable)? FunctionCall,
             ) -> Result<T, R> {
-                Self::default_t(DefaultCause::FunctionCall)
+                if let Some(exp) = &$($mutable)? function_call.arg {
+                    self.visit_expression(exp)
+                } else {
+                    Self::default_t(DefaultCause::FunctionCall)
+                }
+            }
+
+            fn visit_number(
+                &$($self_mutable)? self,
+                number: &$($mutable)? Number,
+            ) -> Result<T, R> {
+                self.default_number(number)
+            }
+
+            fn default_number(
+                &$($self_mutable)? self,
+                #[allow(unused)]
+                number: &$($mutable)? Number,
+            ) -> Result<T, R> {
+                Self::default_t(DefaultCause::Number)
             }
         }
     };
