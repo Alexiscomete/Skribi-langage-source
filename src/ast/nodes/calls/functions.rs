@@ -14,7 +14,11 @@ pub struct FunctionCall {
 }
 
 impl FunctionCall {
-    pub fn new(name: DefaultSymbol, span: SimpleSpan, arg: Option<Box<Expression>>) -> FunctionCall {
+    pub fn new(
+        name: DefaultSymbol,
+        span: SimpleSpan,
+        arg: Option<Box<Expression>>,
+    ) -> FunctionCall {
         FunctionCall {
             name: name.into(),
             span,

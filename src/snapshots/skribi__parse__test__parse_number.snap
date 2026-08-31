@@ -1,0 +1,42 @@
+---
+source: src/parse.rs
+expression: "parse(tokens, src.len())"
+---
+Ok(
+    FileTreeRoot {
+        content: [
+            Expression(
+                Number(
+                    Number {
+                        content: 123,
+                        span: 0..3,
+                    },
+                ),
+            ),
+            Expression(
+                FunctionCall(
+                    FunctionCall {
+                        name: other,
+                        span: 4..14,
+                        arg: None,
+                    },
+                ),
+            ),
+            Deprecated(
+                Deprecated {
+                    message: "skr_app should not be used",
+                    span: 15..22,
+                },
+            ),
+            Expression(
+                Number(
+                    Number {
+                        content: 0,
+                        span: 23..24,
+                    },
+                ),
+            ),
+        ],
+        file: None,
+    },
+)

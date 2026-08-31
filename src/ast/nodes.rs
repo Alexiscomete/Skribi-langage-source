@@ -15,8 +15,8 @@ use crate::{
 pub mod calls;
 pub mod deprecated;
 pub mod expressions;
-pub mod statements;
 pub mod numbers;
+pub mod statements;
 
 #[derive(Debug)]
 pub struct FileTreeRoot {

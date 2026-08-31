@@ -78,21 +78,24 @@ impl MutAstMutVisitor<'_, PruneState> for UnreachableVisitor {
                 start_index = Some(index);
                 break;
             }
-        };
-        if let Some(start_index) = start_index && start_index + 1 != file_tree_root.content.len() {
+        }
+        if let Some(start_index) = start_index
+            && start_index + 1 != file_tree_root.content.len()
+        {
             // Step 1: emit the warning
             let span_generator: Result<SimpleSpan> = (&file_tree_root.content[start_index]).into();
             let span_first: Result<SimpleSpan> = (&file_tree_root.content[start_index + 1]).into();
-            let span_last: Result<SimpleSpan> = (&file_tree_root.content[file_tree_root.content.len() - 1]).into();
+            let span_last: Result<SimpleSpan> =
+                (&file_tree_root.content[file_tree_root.content.len() - 1]).into();
 
             self.spans.push(LabeledSpan::new_primary_with_span(
-                    Some("This statement makes the following unreachable".to_owned()),
-                    span_generator?.into_range(),
+                Some("This statement makes the following unreachable".to_owned()),
+                span_generator?.into_range(),
             ));
 
             self.spans.push(LabeledSpan::new_primary_with_span(
-                    Some("This code is unreachable, it has been pruned".to_owned()),
-                    span_first?.union(span_last?).into_range(),
+                Some("This code is unreachable, it has been pruned".to_owned()),
+                span_first?.union(span_last?).into_range(),
             ));
             // Step 2: drain everything after
             file_tree_root.content.drain(start_index..);

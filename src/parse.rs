@@ -14,8 +14,10 @@ use crate::ast::nodes::statements::Statement;
 use crate::interner::INTERNER;
 use crate::lexer::Tokens;
 use crate::parse::call::{function_call_parser, native_parser};
+use crate::parse::number::number_parser;
 
 pub mod call;
+pub mod number;
 
 // Global warning on the parser: please use .boxed() sometimes, so that the
 // compilation time decreases. This is like INTERCAL, you need to say please
@@ -33,13 +35,18 @@ where
     // This is over complicated as more rules will be added
 
     recursive(|exp| {
+        let number = number_parser().map(|x| Expression::Number(x));
+
         // Anything that starts with a special unique token
         // --> has maximal priority and can be in anything
-        let priority = choice((exp.clone().delimited_by(
-            just(Tokens::LeftParenthesis),
-            just(Tokens::RightParenthesis)
-                .recover_with(via_parser(empty().to(Tokens::RightParenthesis))),
-        ),))
+        let priority = choice((
+            exp.clone().delimited_by(
+                just(Tokens::LeftParenthesis),
+                just(Tokens::RightParenthesis)
+                    .recover_with(via_parser(empty().to(Tokens::RightParenthesis))),
+            ),
+            number,
+        ))
         .boxed();
 
         choice((
@@ -150,7 +157,7 @@ pub fn parse(tokens: Vec<(Result<Tokens, ()>, Span)>, src_len: usize) -> Result<
 #[cfg(test)]
 mod test {
     use crate::{lexer::tokenise, parse::parse};
-    use insta::assert_compact_debug_snapshot;
+    use insta::{assert_compact_debug_snapshot, assert_debug_snapshot};
 
     #[test]
     fn parse_skr_app() {
@@ -171,5 +178,12 @@ mod test {
         let src = "other   () skr_app";
         let tokens = tokenise(src).unwrap();
         assert_compact_debug_snapshot!(parse(tokens, src.len()));
+    }
+
+    #[test]
+    fn parse_number() {
+        let src = "123 other   () skr_app 0";
+        let tokens = tokenise(src).unwrap();
+        assert_debug_snapshot!(parse(tokens, src.len()));
     }
 }
