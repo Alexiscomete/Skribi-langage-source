@@ -6,100 +6,35 @@ info:
     - build
     - resources/test_programs/exit.skrb
 ---
-success: false
-exit_code: 1
+success: true
+exit_code: 0
 ----- stdout -----
 
 ----- stderr -----
-Error:   × Failed to parse the file
-  ╰─▶ Parsing error
-  help: Always try to fix the first parsing error as they might be cascades
-  ├─▶   × found 'ID: a' expected ')' in function call at 52..57 in expression
-  │     │ at 43..57
-  │       ╭─[resources/test_programs/exit.skrb:9:7]
-  │     4 │     exit ()
-  │     5 │ ╭─▶ (
-  │     6 │ │   (
-  │     7 │ │   (
-  │     8 │ │   (
-  │     9 │ ├─▶ (exit(a()))
-  │       · ╰─── ──┬──┬
-  │       · ╰───   │  ╰── found 'ID: a' expected ')'
-  │       · ╰───   ╰── parsing function call
-  │       · ╰──── parsing expression
-  │    10 │     )
-  │       ╰────
-  ├─▶   × found 'ID: a' expected ')' in expression at 43..57
-  │       ╭─[resources/test_programs/exit.skrb:9:7]
-  │     4 │     exit ()
-  │     5 │ ╭─▶ (
-  │     6 │ │   (
-  │     7 │ │   (
-  │     8 │ │   (
-  │     9 │ ├─▶ (exit(a()))
-  │       · ╰───      ┬
-  │       · ╰───      ╰── found 'ID: a' expected ')'
-  │       · ╰──── parsing expression
-  │    10 │     )
-  │       ╰────
-  ├─▶   × found 'ID: a' expected ')' in expression at 43..57
-  │       ╭─[resources/test_programs/exit.skrb:9:7]
-  │     4 │     exit ()
-  │     5 │ ╭─▶ (
-  │     6 │ │   (
-  │     7 │ │   (
-  │     8 │ │   (
-  │     9 │ ├─▶ (exit(a()))
-  │       · ╰───      ┬
-  │       · ╰───      ╰── found 'ID: a' expected ')'
-  │       · ╰──── parsing expression
-  │    10 │     )
-  │       ╰────
-  ├─▶   × found 'ID: a' expected ')' in expression at 43..57
-  │       ╭─[resources/test_programs/exit.skrb:9:7]
-  │     4 │     exit ()
-  │     5 │ ╭─▶ (
-  │     6 │ │   (
-  │     7 │ │   (
-  │     8 │ │   (
-  │     9 │ ├─▶ (exit(a()))
-  │       · ╰───      ┬
-  │       · ╰───      ╰── found 'ID: a' expected ')'
-  │       · ╰──── parsing expression
-  │    10 │     )
-  │       ╰────
-  ├─▶   × found 'ID: a' expected ')' in expression at 43..57
-  │       ╭─[resources/test_programs/exit.skrb:9:7]
-  │     4 │     exit ()
-  │     5 │ ╭─▶ (
-  │     6 │ │   (
-  │     7 │ │   (
-  │     8 │ │   (
-  │     9 │ ├─▶ (exit(a()))
-  │       · ╰───      ┬
-  │       · ╰───      ╰── found 'ID: a' expected ')'
-  │       · ╰──── parsing expression
-  │    10 │     )
-  │       ╰────
-  ├─▶   × found 'ID: a' expected ')' in expression at 43..57
-  │       ╭─[resources/test_programs/exit.skrb:9:7]
-  │     4 │     exit ()
-  │     5 │ ╭─▶ (
-  │     6 │ │   (
-  │     7 │ │   (
-  │     8 │ │   (
-  │     9 │ ├─▶ (exit(a()))
-  │       · ╰───      ┬
-  │       · ╰───      ╰── found 'ID: a' expected ')'
-  │       · ╰──── parsing expression
-  │    10 │     )
-  │       ╰────
-  ╰─▶   × found ')' expected 'skr_app', expression, or end of input
-          ╭─[resources/test_programs/exit.skrb:9:10]
-        8 │ (
-        9 │ (exit(a()))
-          ·          ┬
-          ·          ╰── found ')' expected 'skr_app', expression, or end of
-      input
-       10 │ )
-          ╰────
+[WARN  skribi::source] Warning:   ⚠ Found deprecated parsing features
+       ╭─[resources/test_programs/exit.skrb:1:1]
+     1 │ skr_app exit()
+       · ───┬───
+       ·    ╰── skr_app should not be used
+     2 │ exit()exit()
+       ╰────
+    
+[WARN  skribi::source] Warning:   ⚠ Found unreachable statements
+        ╭─[resources/test_programs/exit.skrb:1:9]
+      1 │     skr_app exit()
+        ·             ───┬──
+        ·                ╰── This statement makes the following unreachable
+      2 │ ╭─▶ exit()exit()
+      3 │ │   exit()
+      4 │ │   exit ()
+      5 │ │   (
+      6 │ │   (
+      7 │ │   (
+      8 │ │   (
+      9 │ ├─▶ (exit(a()))
+        · ╰──── This code is unreachable, it has been pruned
+     10 │     )
+        ╰────
+    
+warning: overriding the module target triple with x86_64-unknown-linux-gnu [-Woverride-module]
+1 warning generated.

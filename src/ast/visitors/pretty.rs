@@ -72,12 +72,15 @@ impl AstMutVisitor<'_, (), Error> for PrettyPrinterVisitor<'_, '_> {
         &mut self,
         function_call: &crate::ast::nodes::calls::functions::FunctionCall,
     ) -> miette::Result<(), Error> {
-        let interner = get_interner_typed()?;
-        let name = interner
-            .resolve(function_call.name.into())
-            .unwrap_or("ERROR");
+        // Isolate to release the lock on the interner
+        {
+            let interner = get_interner_typed()?;
+            let name = interner
+                .resolve(function_call.name.into())
+                .unwrap_or("ERROR");
 
-        write_self!(self, "{}(", name)?;
+            write_self!(self, "{}(", name)?;
+        }
         self.default_function_call(function_call)?;
         write_self!(self, ")")
     }

@@ -6,100 +6,31 @@ info:
     - pretty
     - resources/test_programs/exit.skrb
 ---
-success: false
-exit_code: 1
+success: true
+exit_code: 0
 ----- stdout -----
+File resources/test_programs/exit.skrb AST is:
+DEPRECATED [skr_app should not be used]
+(
+    exit()
+)
+(
+    exit()
+)
+(
+    exit()
+)
+(
+    exit()
+)
+(
+    exit()
+)
+(
+    exit((
+          a()
+     ))
+)
+
 
 ----- stderr -----
-Error:   × Failed to parse the file
-  ╰─▶ Parsing error
-  help: Always try to fix the first parsing error as they might be cascades
-  ├─▶   × found 'ID: a' expected ')' in function call at 52..57 in expression
-  │     │ at 43..57
-  │       ╭─[resources/test_programs/exit.skrb:9:7]
-  │     4 │     exit ()
-  │     5 │ ╭─▶ (
-  │     6 │ │   (
-  │     7 │ │   (
-  │     8 │ │   (
-  │     9 │ ├─▶ (exit(a()))
-  │       · ╰─── ──┬──┬
-  │       · ╰───   │  ╰── found 'ID: a' expected ')'
-  │       · ╰───   ╰── parsing function call
-  │       · ╰──── parsing expression
-  │    10 │     )
-  │       ╰────
-  ├─▶   × found 'ID: a' expected ')' in expression at 43..57
-  │       ╭─[resources/test_programs/exit.skrb:9:7]
-  │     4 │     exit ()
-  │     5 │ ╭─▶ (
-  │     6 │ │   (
-  │     7 │ │   (
-  │     8 │ │   (
-  │     9 │ ├─▶ (exit(a()))
-  │       · ╰───      ┬
-  │       · ╰───      ╰── found 'ID: a' expected ')'
-  │       · ╰──── parsing expression
-  │    10 │     )
-  │       ╰────
-  ├─▶   × found 'ID: a' expected ')' in expression at 43..57
-  │       ╭─[resources/test_programs/exit.skrb:9:7]
-  │     4 │     exit ()
-  │     5 │ ╭─▶ (
-  │     6 │ │   (
-  │     7 │ │   (
-  │     8 │ │   (
-  │     9 │ ├─▶ (exit(a()))
-  │       · ╰───      ┬
-  │       · ╰───      ╰── found 'ID: a' expected ')'
-  │       · ╰──── parsing expression
-  │    10 │     )
-  │       ╰────
-  ├─▶   × found 'ID: a' expected ')' in expression at 43..57
-  │       ╭─[resources/test_programs/exit.skrb:9:7]
-  │     4 │     exit ()
-  │     5 │ ╭─▶ (
-  │     6 │ │   (
-  │     7 │ │   (
-  │     8 │ │   (
-  │     9 │ ├─▶ (exit(a()))
-  │       · ╰───      ┬
-  │       · ╰───      ╰── found 'ID: a' expected ')'
-  │       · ╰──── parsing expression
-  │    10 │     )
-  │       ╰────
-  ├─▶   × found 'ID: a' expected ')' in expression at 43..57
-  │       ╭─[resources/test_programs/exit.skrb:9:7]
-  │     4 │     exit ()
-  │     5 │ ╭─▶ (
-  │     6 │ │   (
-  │     7 │ │   (
-  │     8 │ │   (
-  │     9 │ ├─▶ (exit(a()))
-  │       · ╰───      ┬
-  │       · ╰───      ╰── found 'ID: a' expected ')'
-  │       · ╰──── parsing expression
-  │    10 │     )
-  │       ╰────
-  ├─▶   × found 'ID: a' expected ')' in expression at 43..57
-  │       ╭─[resources/test_programs/exit.skrb:9:7]
-  │     4 │     exit ()
-  │     5 │ ╭─▶ (
-  │     6 │ │   (
-  │     7 │ │   (
-  │     8 │ │   (
-  │     9 │ ├─▶ (exit(a()))
-  │       · ╰───      ┬
-  │       · ╰───      ╰── found 'ID: a' expected ')'
-  │       · ╰──── parsing expression
-  │    10 │     )
-  │       ╰────
-  ╰─▶   × found ')' expected 'skr_app', expression, or end of input
-          ╭─[resources/test_programs/exit.skrb:9:10]
-        8 │ (
-        9 │ (exit(a()))
-          ·          ┬
-          ·          ╰── found ')' expected 'skr_app', expression, or end of
-      input
-       10 │ )
-          ╰────

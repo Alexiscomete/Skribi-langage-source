@@ -51,7 +51,7 @@ where
 
         choice((
             priority.clone(),
-            function_call_parser().map(Expression::FunctionCall),
+            function_call_parser(exp.boxed().clone()).map(Expression::FunctionCall),
         ))
     })
     .labelled("expression")
@@ -185,5 +185,33 @@ mod test {
         let src = "123 other   () skr_app 0";
         let tokens = tokenise(src).unwrap();
         assert_debug_snapshot!(parse(tokens, src.len()));
+    }
+
+    #[test]
+    fn parse_argument() {
+        let src = "123 other ( 2) 0";
+        let tokens = tokenise(src).unwrap();
+        assert_debug_snapshot!("Simple argument number", parse(tokens, src.len()), src);
+    }
+
+    #[test]
+    fn parse_argument_2() {
+        let src = "123 other ( exit ()) 0";
+        let tokens = tokenise(src).unwrap();
+        assert_debug_snapshot!("Function as argument", parse(tokens, src.len()), src);
+    }
+
+    #[test]
+    fn parse_argument_3() {
+        let src = "123 other ( skr_app exit ( a(123))) 0";
+        let tokens = tokenise(src).unwrap();
+        assert_debug_snapshot!("Function as argument and some trash", parse(tokens, src.len()), src);
+    }
+
+    #[test]
+    fn parse_argument_4() {
+        let src = "123 other ( exit ( 123)) 0";
+        let tokens = tokenise(src).unwrap();
+        assert_debug_snapshot!("Function as argument and int", parse(tokens, src.len()), src);
     }
 }

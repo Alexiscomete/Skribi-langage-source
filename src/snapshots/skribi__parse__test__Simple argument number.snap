@@ -1,0 +1,43 @@
+---
+source: src/parse.rs
+expression: 123 other ( 2) 0
+---
+Ok(
+    FileTreeRoot {
+        content: [
+            Expression(
+                Number(
+                    Number {
+                        content: 123,
+                        span: 0..3,
+                    },
+                ),
+            ),
+            Expression(
+                FunctionCall(
+                    FunctionCall {
+                        name: other,
+                        span: 4..14,
+                        arg: Some(
+                            Number(
+                                Number {
+                                    content: 2,
+                                    span: 12..13,
+                                },
+                            ),
+                        ),
+                    },
+                ),
+            ),
+            Expression(
+                Number(
+                    Number {
+                        content: 0,
+                        span: 15..16,
+                    },
+                ),
+            ),
+        ],
+        file: None,
+    },
+)

@@ -1,0 +1,57 @@
+---
+source: src/parse.rs
+expression: 123 other ( skr_app exit ( a(123))) 0
+---
+Err(
+    ParsingErrors {
+        related: [
+            ParsingSingleError {
+                message: "found 'skr_app' expected '(', something else, function call, or ')' in function call at 4..11 in expression at 4..11",
+                span: SourceSpan {
+                    offset: SourceOffset(
+                        12,
+                    ),
+                    length: 7,
+                },
+                span_message: "found 'skr_app' expected '(', something else, function call, or ')'",
+                spans: [
+                    LabeledSpan {
+                        label: Some(
+                            "parsing function call",
+                        ),
+                        span: SourceSpan {
+                            offset: SourceOffset(
+                                4,
+                            ),
+                            length: 7,
+                        },
+                        primary: false,
+                    },
+                    LabeledSpan {
+                        label: Some(
+                            "parsing expression",
+                        ),
+                        span: SourceSpan {
+                            offset: SourceOffset(
+                                4,
+                            ),
+                            length: 7,
+                        },
+                        primary: false,
+                    },
+                ],
+            },
+            ParsingSingleError {
+                message: "found ')' expected 'skr_app', expression, or end of input",
+                span: SourceSpan {
+                    offset: SourceOffset(
+                        34,
+                    ),
+                    length: 1,
+                },
+                span_message: "found ')' expected 'skr_app', expression, or end of input",
+                spans: [],
+            },
+        ],
+    },
+)
