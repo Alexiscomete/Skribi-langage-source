@@ -5,7 +5,7 @@ use inkwell::basic_block::BasicBlock;
 use inkwell::context::Context as InkContext;
 use inkwell::module::Linkage;
 use inkwell::types::{AnyTypeEnum, BasicMetadataTypeEnum, FunctionType};
-use inkwell::values::FunctionValue;
+use inkwell::values::{AnyValueEnum, FunctionValue};
 use inkwell::{builder::Builder, module::Module};
 use log::trace;
 use miette::{Context, IntoDiagnostic, Result, miette};
@@ -13,6 +13,8 @@ use miette::{Context, IntoDiagnostic, Result, miette};
 use crate::ast::nodes::into_str;
 use crate::ast::{nodes::FileTreeRoot, visitors::AstMutVisitor};
 use crate::interner::get_interner;
+
+type Ret<'a> = Option<AnyValueEnum<'a>>;
 
 pub struct CodeGenerator<'ctx> {
     context: &'ctx InkContext,
@@ -169,15 +171,15 @@ impl<'ctx> CodeGenerator<'ctx> {
     }
 }
 
-impl AstMutVisitor<'_, ()> for CodeGenerator<'_> {
-    fn default_t(_: super::DefaultCause) -> miette::Result<(), miette::Error> {
-        Ok(())
+impl AstMutVisitor<'_, Ret<'_>> for CodeGenerator<'_> {
+    fn default_t(_: super::DefaultCause) -> miette::Result<Ret<'static>, miette::Error> {
+        Ok(None)
     }
 
     fn visit_function_call(
         &mut self,
         function_call: &crate::ast::nodes::calls::functions::FunctionCall,
-    ) -> Result<(), miette::Error> {
+    ) -> Result<Ret<'static>, miette::Error> {
         trace!("Compiling a native function call");
 
         let interner = get_interner()?;
@@ -189,7 +191,7 @@ impl AstMutVisitor<'_, ()> for CodeGenerator<'_> {
                 self.main_empty = false;
                 trace!("Function called");
 
-                Ok(())
+                Ok(None)
             }
             _ => todo!("Cannot compile other functions for now"),
         }
