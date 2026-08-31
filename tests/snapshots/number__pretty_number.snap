@@ -1,0 +1,24 @@
+---
+source: tests/number.rs
+info:
+  program: skribi
+  args:
+    - pretty
+    - resources/test_programs/number.skrb
+---
+success: true
+exit_code: 0
+----- stdout -----
+File resources/test_programs/number.skrb AST is:
+(
+    123
+)
+(
+    0
+)
+(
+    50
+)
+
+
+----- stderr -----

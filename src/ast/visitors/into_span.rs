@@ -35,6 +35,13 @@ impl AstVisitor<'_, SimpleSpan> for IntoSpanVisitor {
     ) -> miette::Result<SimpleSpan, miette::Error> {
         Ok(function_call.span)
     }
+
+    fn visit_number(
+        &self,
+        number: &crate::ast::nodes::numbers::Number,
+    ) -> Result<SimpleSpan, miette::Error> {
+        Ok(number.span)
+    }
 }
 
 // Complete this section by adding new From impl

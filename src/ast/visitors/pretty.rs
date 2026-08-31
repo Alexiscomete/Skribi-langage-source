@@ -3,7 +3,7 @@ use std::fmt::{Display, Error, Formatter};
 
 use crate::{
     ast::{nodes::FileTreeRoot, visitors::AstMutVisitor},
-    interner::INTERNER,
+    interner::get_interner_typed,
 };
 
 struct PrettyPrinterVisitor<'fmt_ref, 'fmt_object> {
@@ -72,16 +72,22 @@ impl AstMutVisitor<'_, (), Error> for PrettyPrinterVisitor<'_, '_> {
         &mut self,
         function_call: &crate::ast::nodes::calls::functions::FunctionCall,
     ) -> miette::Result<(), Error> {
-        self.default_function_call(function_call)?;
-
-        let interner = INTERNER.lock().map_err(|_| {
-            error!("Failed to get the lock");
-            Error
-        })?;
+        let interner = get_interner_typed()?;
         let name = interner
             .resolve(function_call.name.into())
             .unwrap_or("ERROR");
 
-        write_self!(self, "{}()", name)
+        write_self!(self, "{}(", name)?;
+        self.default_function_call(function_call)?;
+        write_self!(self, ")")
+    }
+
+    fn visit_number(
+        &mut self,
+        number: &crate::ast::nodes::numbers::Number,
+    ) -> miette::Result<(), Error> {
+        let interner = get_interner_typed()?;
+        let name = interner.resolve(number.content.into()).unwrap_or("ERROR");
+        write_self!(self, "{}", name)
     }
 }
