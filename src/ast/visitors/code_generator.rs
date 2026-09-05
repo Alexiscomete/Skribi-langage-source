@@ -5,7 +5,7 @@ use inkwell::basic_block::BasicBlock;
 use inkwell::context::Context as InkContext;
 use inkwell::module::Linkage;
 use inkwell::types::{AnyTypeEnum, BasicMetadataTypeEnum, FunctionType};
-use inkwell::values::{AnyValueEnum, FunctionValue};
+use inkwell::values::{AnyValueEnum, BasicMetadataValueEnum, FunctionValue};
 use inkwell::{builder::Builder, module::Module};
 use log::trace;
 use miette::{Context, IntoDiagnostic, Result, miette};
@@ -120,7 +120,7 @@ impl<'ctx> CodeGenerator<'ctx> {
         Ok(())
     }
 
-    fn build_exit_call(&self, code: u64) -> Result<(), miette::Error> {
+    fn build_exit_call(&self, code: BasicMetadataValueEnum<'ctx>) -> Result<(), miette::Error> {
         let argument_type = self.context.i32_type();
 
         let return_type = self.context.void_type();
@@ -134,9 +134,8 @@ impl<'ctx> CodeGenerator<'ctx> {
 
         // We might want to simplify this later
         // Not enough data for now
-        let argument = argument_type.const_int(code, false);
         self.builder
-            .build_call(exit_function, &[argument.into()], "call_exit")
+            .build_call(exit_function, &[code], "call_exit")
             .into_diagnostic()
             .context("While creating call to exit")?;
         self.builder
@@ -162,7 +161,8 @@ impl<'ctx> CodeGenerator<'ctx> {
         compiler.visit_file_tree_root(root)?;
 
         if compiler.main_empty {
-            compiler.build_exit_call(0)?;
+            let arg = compiler.context.i32_type().const_int(0, false);
+            compiler.build_exit_call(arg.into())?;
         }
 
         compiler.save(name, folder)?;
@@ -180,14 +180,15 @@ impl AstMutVisitor<'_, Ret<'_>> for CodeGenerator<'_> {
         &mut self,
         function_call: &crate::ast::nodes::calls::functions::FunctionCall,
     ) -> Result<Ret<'static>, miette::Error> {
-        trace!("Compiling a native function call");
+        trace!("Compiling a function call");
 
         let interner = get_interner()?;
         let name = into_str(&interner, function_call.name);
         match name {
             "exit" => {
                 trace!("Found an exit call");
-                self.build_exit_call(42)?;
+                let arg = self.context.i32_type().const_int(42, false);
+                self.build_exit_call(arg.into())?;
                 self.main_empty = false;
                 trace!("Function called");
 
