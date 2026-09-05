@@ -1,0 +1,25 @@
+---
+source: tests/number.rs
+info:
+  program: skribi
+  args:
+    - pretty
+    - resources/test_programs/argument.skrb
+---
+success: true
+exit_code: 0
+----- stdout -----
+File resources/test_programs/argument.skrb AST is:
+(
+    exit((
+          50
+     ))
+)
+(
+    exit((
+          exit()
+     ))
+)
+
+
+----- stderr -----

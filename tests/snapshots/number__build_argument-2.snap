@@ -1,0 +1,11 @@
+---
+source: tests/number.rs
+info:
+  program: argument.out
+  args: []
+---
+success: false
+exit_code: 50
+----- stdout -----
+
+----- stderr -----

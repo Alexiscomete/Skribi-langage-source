@@ -1,0 +1,25 @@
+---
+source: tests/number.rs
+info:
+  program: skribi
+  args:
+    - build
+    - resources/test_programs/argument.skrb
+---
+success: true
+exit_code: 0
+----- stdout -----
+
+----- stderr -----
+[WARN  skribi::source] Warning:   ⚠ Found unreachable statements
+       ╭─[resources/test_programs/argument.skrb:1:1]
+     1 │ exit(50)
+       · ────┬───
+       ·     ╰── This statement makes the following unreachable
+     2 │ exit(exit())
+       · ──────┬─────
+       ·       ╰── This code is unreachable, it has been pruned
+       ╰────
+    
+warning: overriding the module target triple with x86_64-unknown-linux-gnu [-Woverride-module]
+1 warning generated.

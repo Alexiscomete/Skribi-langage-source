@@ -98,7 +98,7 @@ impl MutAstMutVisitor<'_, PruneState> for UnreachableVisitor {
                 span_first?.union(span_last?).into_range(),
             ));
             // Step 2: drain everything after
-            file_tree_root.content.drain(start_index..);
+            file_tree_root.content.drain((start_index + 1)..);
         }
         trace!("There is {} statements", file_tree_root.content.len());
         if let Some(t) = res {

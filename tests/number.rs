@@ -26,3 +26,26 @@ fn test_pretty_number() {
             .arg("resources/test_programs/number.skrb")
     )
 }
+
+#[test]
+fn test_build_argument() {
+    assert_cmd_snapshot!(
+        cli!()
+            .arg("build")
+            .arg("resources/test_programs/argument.skrb")
+            .arg("-o")
+            .arg(".skribi/argument.out")
+    );
+    assert_cmd_snapshot!(
+        Command::new("./.skribi/argument.out")
+    )
+}
+
+#[test]
+fn test_pretty_argument() {
+    assert_cmd_snapshot!(
+        cli!()
+            .arg("pretty")
+            .arg("resources/test_programs/argument.skrb")
+    )
+}

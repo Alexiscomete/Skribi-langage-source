@@ -5,16 +5,16 @@ use inkwell::basic_block::BasicBlock;
 use inkwell::context::Context as InkContext;
 use inkwell::module::Linkage;
 use inkwell::types::{AnyTypeEnum, BasicMetadataTypeEnum, FunctionType};
-use inkwell::values::{AnyValueEnum, BasicMetadataValueEnum, FunctionValue};
+use inkwell::values::{BasicMetadataValueEnum, FunctionValue};
 use inkwell::{builder::Builder, module::Module};
-use log::trace;
+use log::{debug, trace};
 use miette::{Context, IntoDiagnostic, Result, miette};
 
 use crate::ast::nodes::into_str;
 use crate::ast::{nodes::FileTreeRoot, visitors::AstMutVisitor};
 use crate::interner::get_interner;
 
-type Ret<'a> = Option<AnyValueEnum<'a>>;
+type Ret<'a> = Option<BasicMetadataValueEnum<'a>>;
 
 pub struct CodeGenerator<'ctx> {
     context: &'ctx InkContext,
@@ -171,7 +171,7 @@ impl<'ctx> CodeGenerator<'ctx> {
     }
 }
 
-impl AstMutVisitor<'_, Ret<'_>> for CodeGenerator<'_> {
+impl<'ctx> AstMutVisitor<'_, Ret<'ctx>> for CodeGenerator<'ctx> {
     fn default_t(_: super::DefaultCause) -> miette::Result<Ret<'static>, miette::Error> {
         Ok(None)
     }
@@ -182,13 +182,20 @@ impl AstMutVisitor<'_, Ret<'_>> for CodeGenerator<'_> {
     ) -> Result<Ret<'static>, miette::Error> {
         trace!("Compiling a function call");
 
+        // Step 1, compile the arguments
+        // TODO: support multiple arguments
+
+        let args = self.default_function_call(function_call)?;
+
+        // Step 2, call
         let interner = get_interner()?;
         let name = into_str(&interner, function_call.name);
         match name {
             "exit" => {
                 trace!("Found an exit call");
-                let arg = self.context.i32_type().const_int(42, false);
-                self.build_exit_call(arg.into())?;
+                let arg =
+                    args.unwrap_or_else(|| self.context.i32_type().const_int(42, false).into());
+                self.build_exit_call(arg)?;
                 self.main_empty = false;
                 trace!("Function called");
 
@@ -196,5 +203,21 @@ impl AstMutVisitor<'_, Ret<'_>> for CodeGenerator<'_> {
             }
             _ => todo!("Cannot compile other functions for now"),
         }
+    }
+
+    fn visit_number(
+        &mut self,
+        number: &crate::ast::nodes::numbers::Number,
+    ) -> Result<Ret<'ctx>, miette::Error> {
+        trace!("Compiling a number");
+
+        let interner = get_interner()?;
+        let name = into_str(&interner, number.content);
+        let value = name.parse().into_diagnostic()?;
+
+        debug!("Found number {}", value);
+
+        let res = self.context.i32_type().const_int(value, false);
+        Ok(Some(res.into()))
     }
 }

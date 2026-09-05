@@ -205,13 +205,21 @@ mod test {
     fn parse_argument_3() {
         let src = "123 other ( skr_app exit ( a(123))) 0";
         let tokens = tokenise(src).unwrap();
-        assert_debug_snapshot!("Function as argument and some trash", parse(tokens, src.len()), src);
+        assert_debug_snapshot!(
+            "Function as argument and some trash",
+            parse(tokens, src.len()),
+            src
+        );
     }
 
     #[test]
     fn parse_argument_4() {
         let src = "123 other ( exit ( 123)) 0";
         let tokens = tokenise(src).unwrap();
-        assert_debug_snapshot!("Function as argument and int", parse(tokens, src.len()), src);
+        assert_debug_snapshot!(
+            "Function as argument and int",
+            parse(tokens, src.len()),
+            src
+        );
     }
 }

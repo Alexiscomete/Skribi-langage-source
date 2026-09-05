@@ -163,4 +163,12 @@ mod test {
         let res = Command::new(bin).status().unwrap();
         assert_eq!(res.code().unwrap(), 0);
     }
+
+    #[test]
+    fn test_full_exit_program_with_number() {
+        // _dir is used instead of _ to avoid the drop
+        let (_dir, bin) = compile("exit(123)");
+        let res = Command::new(bin).status().unwrap();
+        assert_eq!(res.code().unwrap(), 123);
+    }
 }
