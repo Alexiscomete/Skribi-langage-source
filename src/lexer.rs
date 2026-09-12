@@ -34,6 +34,9 @@ pub enum Tokens {
     #[regex(r"0|[1-9][0-9]*", |lex| lex.extras.get_or_intern(lex.slice()))]
     Number(DefaultSymbol),
 
+    #[token("+")]
+    Plus,
+
     /// Note: no need of them in parsing
     #[regex(r"[ \t\n]+", logos::skip)]
     #[regex(r"//[^\n]*\n", logos::skip, allow_greedy = true)]
@@ -78,6 +81,7 @@ impl Display for Tokens {
                     Self::RightParenthesis => ")",
                     Self::Ignore => " ",
                     Self::NativeCall => "skr_app",
+                    Self::Plus => "+",
                     // WARNING: when adding tokens, always check the above list
                     _ => unreachable!(),
                 }

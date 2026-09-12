@@ -1,15 +1,18 @@
 use chumsky::error::Rich;
+use chumsky::extra::Full;
 use chumsky::input::{Input, Stream, ValueInput};
 use chumsky::prelude::{choice, empty, just, recursive, via_parser};
+use chumsky::primitive::one_of;
 use chumsky::span::SimpleSpan;
-use chumsky::{IterParser, Parser, extra};
+use chumsky::{Boxed, IterParser, Parser, extra};
 use logos::Span;
 use miette::{Diagnostic, LabeledSpan, Result, SourceSpan, miette};
 use string_interner::DefaultSymbol;
 use thiserror::Error;
 
 use crate::ast::nodes::FileTreeRoot;
-use crate::ast::nodes::expressions::Expression;
+use crate::ast::nodes::binop::{Binop, BinopEnum};
+use crate::ast::nodes::expressions::Expression::{self};
 use crate::ast::nodes::statements::Statement;
 use crate::interner::INTERNER;
 use crate::lexer::Tokens;
@@ -25,6 +28,34 @@ pub mod number;
 
 // This functions define abstract parsers that will be instancieted by chumsky.
 // This does not actually parse anything.
+
+fn list_binop_parser<'tok, 'src: 'tok, I>(
+    elements: Vec<Tokens>,
+    then: impl Parser<'tok, I, Expression, extra::Err<Rich<'tok, Tokens>>> + Clone,
+) -> impl Parser<'tok, I, Expression, extra::Err<Rich<'tok, Tokens>>> + Clone
+where
+    I: ValueInput<'tok, Token = Tokens, Span = SimpleSpan>,
+{
+    then.clone()
+        .foldl(one_of(elements).then(then).repeated(), |lhs, (_, rhs)| {
+            Expression::Binop(Binop {
+                left: Box::new(lhs),
+                right: Box::new(rhs),
+                binop: BinopEnum::Add,
+            })
+        })
+}
+
+pub fn binop_parser<'tok, 'src: 'tok, I>(
+    exp: Boxed<'tok, '_, I, Expression, Full<Rich<'tok, Tokens>, (), ()>>,
+) -> impl Parser<'tok, I, Expression, extra::Err<Rich<'tok, Tokens>>> + Clone
+where
+    I: ValueInput<'tok, Token = Tokens, Span = SimpleSpan>,
+{
+    let binary_md = list_binop_parser(vec![Tokens::Plus], exp);
+
+    binary_md.labelled("binop")
+}
 
 fn expression_parser<'tok, 'src: 'tok, I>()
 -> impl Parser<'tok, I, Expression, extra::Err<Rich<'tok, Tokens>>> + Clone + 'tok
@@ -49,10 +80,12 @@ where
         ))
         .boxed();
 
-        choice((
+        let other = choice((
             priority.clone(),
             function_call_parser(exp.boxed().clone()).map(Expression::FunctionCall),
-        ))
+        ));
+
+        choice((binop_parser(priority.boxed().clone()), other))
     })
     .labelled("expression")
     .as_context()

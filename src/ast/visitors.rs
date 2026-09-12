@@ -21,6 +21,7 @@
 //! Visitors are the heart of a compiler.
 
 use crate::ast::nodes::FileTreeRoot;
+use crate::ast::nodes::binop::Binop;
 use crate::ast::nodes::calls::functions::FunctionCall;
 use crate::ast::nodes::deprecated::Deprecated;
 use crate::ast::nodes::expressions::Expression;
@@ -133,6 +134,7 @@ macro_rules! make_ast_visitor {
                 match expression {
                     Expression::FunctionCall(function_call) => self.visit_function_call(function_call),
                     Expression::Number(number) => self.visit_number(number),
+                    Expression::Binop(binop) => self.visit_binop(binop),
                 }
             }
 
@@ -167,6 +169,27 @@ macro_rules! make_ast_visitor {
                 number: &$($mutable)? Number,
             ) -> Result<T, R> {
                 Self::default_t(DefaultCause::Number)
+            }
+
+            fn visit_binop(
+                &$($self_mutable)? self,
+                binop: &$($mutable)? Binop,
+            ) -> Result<T, R> {
+                self.default_binop(binop)
+            }
+
+            fn default_binop(
+                &$($self_mutable)? self,
+                binop: &$($mutable)? Binop,
+            ) -> Result<T, R> {
+                let left = Some(self.visit_expression(&$($mutable)? binop.left)?);
+                let right = self.visit_expression(&$($mutable)? binop.right)?;
+                let res = Self::aggregate_t(left, right);
+                if let Some(t) = res {
+                    Ok(t)
+                } else {
+                    Self::default_t(DefaultCause::ZeroElements)
+                }
             }
         }
     };

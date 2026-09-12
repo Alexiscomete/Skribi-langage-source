@@ -12,6 +12,7 @@ use crate::{
     interner::{INTERNER, Interner},
 };
 
+pub mod binop;
 pub mod calls;
 pub mod deprecated;
 pub mod expressions;

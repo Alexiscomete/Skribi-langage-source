@@ -36,9 +36,7 @@ fn test_build_argument() {
             .arg("-o")
             .arg(".skribi/argument.out")
     );
-    assert_cmd_snapshot!(
-        Command::new("./.skribi/argument.out")
-    )
+    assert_cmd_snapshot!(Command::new("./.skribi/argument.out"))
 }
 
 #[test]
