@@ -93,4 +93,13 @@ impl AstMutVisitor<'_, (), Error> for PrettyPrinterVisitor<'_, '_> {
         let name = interner.resolve(number.content.into()).unwrap_or("ERROR");
         write_self!(self, "{}", name)
     }
+
+    fn visit_binop(
+        &mut self,
+        binop: &crate::ast::nodes::binop::Binop,
+    ) -> miette::Result<(), Error> {
+        self.visit_expression(&binop.left)?;
+        write_self!(self, " + ")?;
+        self.visit_expression(&binop.right)
+    }
 }

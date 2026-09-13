@@ -1,0 +1,17 @@
+---
+source: tests/add.rs
+info:
+  program: skribi
+  args:
+    - build
+    - resources/test_programs/exit_add.skrb
+    - "-o"
+    - ".skribi/add.out"
+---
+success: true
+exit_code: 0
+----- stdout -----
+
+----- stderr -----
+warning: overriding the module target triple with x86_64-unknown-linux-gnu [-Woverride-module]
+1 warning generated.

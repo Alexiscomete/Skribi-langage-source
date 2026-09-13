@@ -1,0 +1,11 @@
+---
+source: tests/add.rs
+info:
+  program: add.out
+  args: []
+---
+success: false
+exit_code: 20
+----- stdout -----
+
+----- stderr -----

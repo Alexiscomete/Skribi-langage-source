@@ -5,7 +5,7 @@ use inkwell::basic_block::BasicBlock;
 use inkwell::context::Context as InkContext;
 use inkwell::module::Linkage;
 use inkwell::types::{AnyTypeEnum, BasicMetadataTypeEnum, FunctionType};
-use inkwell::values::{BasicMetadataValueEnum, FunctionValue};
+use inkwell::values::{BasicMetadataValueEnum, FunctionValue, IntValue};
 use inkwell::{builder::Builder, module::Module};
 use log::{debug, trace};
 use miette::{Context, IntoDiagnostic, Result, miette};
@@ -41,6 +41,15 @@ impl<'ctx> CodeGenerator<'ctx> {
                 return_type.fn_type(parameters_types, is_var_args)
             }
             _ => Err(miette!("Type not supported for return type"))?,
+        })
+    }
+
+    fn to_int_math_value(
+        value: BasicMetadataValueEnum<'ctx>
+    ) -> Result<IntValue<'ctx>> {
+        Ok(match value {
+            BasicMetadataValueEnum::IntValue(int_value) => int_value,
+            _ => Err(miette!("Type not supported int type"))?,
         })
     }
 
@@ -219,5 +228,29 @@ impl<'ctx> AstMutVisitor<'_, Ret<'ctx>> for CodeGenerator<'ctx> {
 
         let res = self.context.i32_type().const_int(value, false);
         Ok(Some(res.into()))
+    }
+
+    fn visit_binop(
+        &mut self,
+        binop: &crate::ast::nodes::binop::Binop,
+    ) -> Result<Ret<'ctx>, miette::Error> {
+        trace!("Compiling a binop");
+
+        let left = self
+            .visit_expression(&binop.left)?
+            .map_or_else(|| Err(miette!("No valid left expression")), |v| Ok(v))?;
+        let right = self
+            .visit_expression(&binop.right)?
+            .map_or_else(|| Err(miette!("No valid right expression")), |v| Ok(v))?;
+
+        let left = Self::to_int_math_value(left)?;
+        let right = Self::to_int_math_value(right)?;
+
+        let add = self
+            .builder
+            .build_int_add(left, right, "add")
+            .into_diagnostic()?;
+
+        Ok(Some(add.into()))
     }
 }

@@ -1,0 +1,28 @@
+---
+source: tests/add.rs
+info:
+  program: skribi
+  args:
+    - pretty
+    - resources/test_programs/exit_add.skrb
+---
+success: true
+exit_code: 0
+----- stdout -----
+File resources/test_programs/exit_add.skrb AST is:
+(
+    exit((
+          (
+                (
+                      12
+                 ) + (
+                      3
+                 )
+           ) + (
+                5
+           )
+     ))
+)
+
+
+----- stderr -----
