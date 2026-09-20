@@ -3,6 +3,9 @@ use crate::ast::nodes::expressions::Expression;
 #[derive(PartialEq, Clone, Debug)]
 pub enum BinopEnum {
     Add,
+    Substract,
+    Multiply,
+    Divide,
 }
 
 #[derive(PartialEq, Clone, Debug)]

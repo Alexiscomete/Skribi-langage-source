@@ -52,9 +52,10 @@ pub fn binop_parser<'tok, 'src: 'tok, I>(
 where
     I: ValueInput<'tok, Token = Tokens, Span = SimpleSpan>,
 {
-    let binary_md = list_binop_parser(vec![Tokens::Plus], exp);
+    let binary_md = list_binop_parser(vec![Tokens::Mul, Tokens::Div], exp);
+    let binary_pm = list_binop_parser(vec![Tokens::Plus, Tokens::Minus], binary_md);
 
-    binary_md.labelled("binop")
+    binary_pm.labelled("binop")
 }
 
 fn expression_parser<'tok, 'src: 'tok, I>()

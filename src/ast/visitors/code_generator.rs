@@ -44,9 +44,7 @@ impl<'ctx> CodeGenerator<'ctx> {
         })
     }
 
-    fn to_int_math_value(
-        value: BasicMetadataValueEnum<'ctx>
-    ) -> Result<IntValue<'ctx>> {
+    fn to_int_math_value(value: BasicMetadataValueEnum<'ctx>) -> Result<IntValue<'ctx>> {
         Ok(match value {
             BasicMetadataValueEnum::IntValue(int_value) => int_value,
             _ => Err(miette!("Type not supported int type"))?,

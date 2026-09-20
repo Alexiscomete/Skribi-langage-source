@@ -36,6 +36,12 @@ pub enum Tokens {
 
     #[token("+")]
     Plus,
+    #[token("-")]
+    Minus,
+    #[token("/")]
+    Div,
+    #[token("*")]
+    Mul,
 
     /// Note: no need of them in parsing
     #[regex(r"[ \t\n]+", logos::skip)]
