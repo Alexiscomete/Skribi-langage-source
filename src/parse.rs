@@ -11,7 +11,7 @@ use string_interner::DefaultSymbol;
 use thiserror::Error;
 
 use crate::ast::nodes::FileTreeRoot;
-use crate::ast::nodes::binop::{Binop, BinopEnum};
+use crate::ast::nodes::binop::Binop;
 use crate::ast::nodes::expressions::Expression::{self};
 use crate::ast::nodes::statements::Statement;
 use crate::interner::INTERNER;
@@ -37,11 +37,11 @@ where
     I: ValueInput<'tok, Token = Tokens, Span = SimpleSpan>,
 {
     then.clone()
-        .foldl(one_of(elements).then(then).repeated(), |lhs, (_, rhs)| {
+        .foldl(one_of(elements).then(then).repeated(), |lhs, (t, rhs)| {
             Expression::Binop(Binop {
                 left: Box::new(lhs),
                 right: Box::new(rhs),
-                binop: BinopEnum::Add,
+                binop: t.into(),
             })
         })
 }

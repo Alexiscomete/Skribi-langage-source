@@ -1,4 +1,4 @@
-use crate::ast::nodes::expressions::Expression;
+use crate::{ast::nodes::expressions::Expression, lexer::Tokens};
 
 #[derive(PartialEq, Clone, Debug)]
 pub enum BinopEnum {
@@ -6,6 +6,18 @@ pub enum BinopEnum {
     Substract,
     Multiply,
     Divide,
+}
+
+impl From<Tokens> for BinopEnum {
+    fn from(value: Tokens) -> Self {
+        match value {
+            Tokens::Mul => Self::Multiply,
+            Tokens::Div => Self::Divide,
+            Tokens::Plus => Self::Add,
+            Tokens::Minus => Self::Substract,
+            _ => unreachable!(),
+        }
+    }
 }
 
 #[derive(PartialEq, Clone, Debug)]
