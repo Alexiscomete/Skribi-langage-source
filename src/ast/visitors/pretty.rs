@@ -99,7 +99,7 @@ impl AstMutVisitor<'_, (), Error> for PrettyPrinterVisitor<'_, '_> {
         binop: &crate::ast::nodes::binop::Binop,
     ) -> miette::Result<(), Error> {
         self.visit_expression(&binop.left)?;
-        write_self!(self, " + ")?;
+        write_self!(self, " {} ", binop.binop)?;
         self.visit_expression(&binop.right)
     }
 }

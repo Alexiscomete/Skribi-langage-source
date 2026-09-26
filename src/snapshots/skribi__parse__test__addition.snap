@@ -1,0 +1,17 @@
+---
+source: src/parse.rs
+expression: exit(1+2+3)
+---
+(
+    exit((
+          (
+                (
+                      1
+                 ) + (
+                      2
+                 )
+           ) + (
+                3
+           )
+     ))
+)

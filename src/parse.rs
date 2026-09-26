@@ -191,7 +191,7 @@ pub fn parse(tokens: Vec<(Result<Tokens, ()>, Span)>, src_len: usize) -> Result<
 #[cfg(test)]
 mod test {
     use crate::{lexer::tokenise, parse::parse};
-    use insta::{assert_compact_debug_snapshot, assert_debug_snapshot};
+    use insta::{assert_compact_debug_snapshot, assert_debug_snapshot, assert_snapshot};
 
     #[test]
     fn parse_skr_app() {
@@ -253,6 +253,50 @@ mod test {
         assert_debug_snapshot!(
             "Function as argument and int",
             parse(tokens, src.len()),
+            src
+        );
+    }
+
+    #[test]
+    fn parse_addition() {
+        let src = "exit(1+2+3)";
+        let tokens = tokenise(src).unwrap();
+        assert_snapshot!(
+            "addition",
+            parse(tokens, src.len()).unwrap(),
+            src
+        );
+    }
+
+    #[test]
+    fn parse_substraction() {
+        let src = "exit(1+2-3+1-0)";
+        let tokens = tokenise(src).unwrap();
+        assert_snapshot!(
+            "substraction",
+            parse(tokens, src.len()).unwrap(),
+            src
+        );
+    }
+
+    #[test]
+    fn parse_division() {
+        let src = "exit(1+2-3/1-0)";
+        let tokens = tokenise(src).unwrap();
+        assert_snapshot!(
+            "division",
+            parse(tokens, src.len()).unwrap(),
+            src
+        );
+    }
+
+    #[test]
+    fn parse_multiplication() {
+        let src = "exit(1+2-3*2/1*5-0)";
+        let tokens = tokenise(src).unwrap();
+        assert_snapshot!(
+            "multiplication",
+            parse(tokens, src.len()).unwrap(),
             src
         );
     }
