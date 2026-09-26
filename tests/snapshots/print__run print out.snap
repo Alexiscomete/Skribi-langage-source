@@ -1,0 +1,14 @@
+---
+source: tests/print.rs
+info:
+  program: print.out
+  args: []
+---
+success: true
+exit_code: 0
+----- stdout -----
+
+1
+3
+
+----- stderr -----

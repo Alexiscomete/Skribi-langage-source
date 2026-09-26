@@ -1,11 +1,12 @@
 use std::fs::create_dir_all;
 use std::path::Path;
 
+use inkwell::AddressSpace;
 use inkwell::basic_block::BasicBlock;
 use inkwell::context::Context as InkContext;
 use inkwell::module::Linkage;
 use inkwell::types::{AnyTypeEnum, BasicMetadataTypeEnum, FunctionType};
-use inkwell::values::{BasicMetadataValueEnum, FunctionValue, IntValue};
+use inkwell::values::{BasicMetadataValueEnum, FunctionValue, IntValue, PointerValue};
 use inkwell::{builder::Builder, module::Module};
 use log::{debug, trace};
 use miette::{Context, IntoDiagnostic, Result, miette};
@@ -59,7 +60,7 @@ impl<'ctx> CodeGenerator<'ctx> {
         parameters_types: &[BasicMetadataTypeEnum<'ctx>],
         is_var_args: bool,
         linkage: Option<Linkage>,
-    ) -> Result<FunctionValue<'_>> {
+    ) -> Result<FunctionValue<'ctx>> {
         let main_function_type = Self::to_fn_type(return_type, parameters_types, is_var_args)?;
         let main_function = self.module.add_function(name, main_function_type, linkage);
         Ok(main_function)
@@ -72,7 +73,7 @@ impl<'ctx> CodeGenerator<'ctx> {
         parameters_types: &[BasicMetadataTypeEnum<'ctx>],
         is_var_args: bool,
         linkage: Option<Linkage>,
-    ) -> Result<FunctionValue<'_>> {
+    ) -> Result<FunctionValue<'ctx>> {
         Ok(if let Some(func) = self.module.get_function(name) {
             func
         } else {
@@ -128,7 +129,7 @@ impl<'ctx> CodeGenerator<'ctx> {
         Ok(())
     }
 
-    fn build_exit_call(&self, code: BasicMetadataValueEnum<'ctx>) -> Result<(), miette::Error> {
+    fn build_exit_call(&self, code: BasicMetadataValueEnum<'ctx>) -> Result<()> {
         let argument_type = self.context.i32_type();
 
         let return_type = self.context.void_type();
@@ -152,6 +153,51 @@ impl<'ctx> CodeGenerator<'ctx> {
             .context("While creating unreachable end of branch")?;
 
         Ok(())
+    }
+
+    fn build_print_fct(&self) -> Result<FunctionValue<'ctx>> {
+        let argument_type = self.context.ptr_type(AddressSpace::default());
+        let return_type = self.context.i32_type();
+
+        self.get_or_import(
+            "printf",
+            return_type.into(),
+            &[argument_type.into()],
+            true,
+            None,
+        )
+    }
+
+    fn create_format_str(
+        &self,
+        value: Option<BasicMetadataValueEnum<'ctx>>,
+        name: &str,
+    ) -> Result<PointerValue<'ctx>> {
+        Ok(self
+            .builder
+            .build_global_string_ptr(if value.is_some() { "%i\n" } else { "\n" }, name)
+            .into_diagnostic()?
+            .as_pointer_value())
+    }
+
+    fn build_print_call(&self, value: Option<BasicMetadataValueEnum<'ctx>>) -> Result<Ret<'ctx>> {
+        let print = self.build_print_fct()?;
+        let format = self.create_format_str(value, "call_printf")?;
+        let args: &[BasicMetadataValueEnum<'ctx>] = if let Some(value) = value {
+            &[format.into(), value]
+        } else {
+            &[format.into()]
+        };
+
+        Ok(Some(
+            self.builder
+                .build_call(print, args, "call_printf")
+                .into_diagnostic()
+                .context("While creating call to printf")?
+                .try_as_basic_value()
+                .expect_basic("Printf always returns")
+                .into(),
+        ))
     }
 
     pub fn compile(root: &FileTreeRoot, name: &str, folder: &str) -> Result<()> {
@@ -187,7 +233,7 @@ impl<'ctx> AstMutVisitor<'_, Ret<'ctx>> for CodeGenerator<'ctx> {
     fn visit_function_call(
         &mut self,
         function_call: &crate::ast::nodes::calls::functions::FunctionCall,
-    ) -> Result<Ret<'static>, miette::Error> {
+    ) -> Result<Ret<'ctx>, miette::Error> {
         trace!("Compiling a function call");
 
         // Step 1, compile the arguments
@@ -209,6 +255,7 @@ impl<'ctx> AstMutVisitor<'_, Ret<'ctx>> for CodeGenerator<'ctx> {
 
                 Ok(None)
             }
+            "println" => self.build_print_call(args),
             _ => todo!("Cannot compile other functions for now"),
         }
     }
