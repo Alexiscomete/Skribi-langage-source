@@ -261,43 +261,27 @@ mod test {
     fn parse_addition() {
         let src = "exit(1+2+3)";
         let tokens = tokenise(src).unwrap();
-        assert_snapshot!(
-            "addition",
-            parse(tokens, src.len()).unwrap(),
-            src
-        );
+        assert_snapshot!("addition", parse(tokens, src.len()).unwrap(), src);
     }
 
     #[test]
     fn parse_substraction() {
         let src = "exit(1+2-3+1-0)";
         let tokens = tokenise(src).unwrap();
-        assert_snapshot!(
-            "substraction",
-            parse(tokens, src.len()).unwrap(),
-            src
-        );
+        assert_snapshot!("substraction", parse(tokens, src.len()).unwrap(), src);
     }
 
     #[test]
     fn parse_division() {
         let src = "exit(1+2-3/1-0)";
         let tokens = tokenise(src).unwrap();
-        assert_snapshot!(
-            "division",
-            parse(tokens, src.len()).unwrap(),
-            src
-        );
+        assert_snapshot!("division", parse(tokens, src.len()).unwrap(), src);
     }
 
     #[test]
     fn parse_multiplication() {
         let src = "exit(1+2-3*2/1*5-0)";
         let tokens = tokenise(src).unwrap();
-        assert_snapshot!(
-            "multiplication",
-            parse(tokens, src.len()).unwrap(),
-            src
-        );
+        assert_snapshot!("multiplication", parse(tokens, src.len()).unwrap(), src);
     }
 }

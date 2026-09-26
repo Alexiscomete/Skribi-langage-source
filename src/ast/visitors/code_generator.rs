@@ -10,6 +10,7 @@ use inkwell::{builder::Builder, module::Module};
 use log::{debug, trace};
 use miette::{Context, IntoDiagnostic, Result, miette};
 
+use crate::ast::nodes::binop::BinopEnum;
 use crate::ast::nodes::into_str;
 use crate::ast::{nodes::FileTreeRoot, visitors::AstMutVisitor};
 use crate::interner::get_interner;
@@ -244,11 +245,14 @@ impl<'ctx> AstMutVisitor<'_, Ret<'ctx>> for CodeGenerator<'ctx> {
         let left = Self::to_int_math_value(left)?;
         let right = Self::to_int_math_value(right)?;
 
-        let add = self
-            .builder
-            .build_int_add(left, right, "add")
-            .into_diagnostic()?;
+        let result = match binop.binop {
+            BinopEnum::Add => self.builder.build_int_add(left, right, "add"),
+            BinopEnum::Substract => self.builder.build_int_sub(left, right, "sub"),
+            BinopEnum::Multiply => self.builder.build_int_mul(left, right, "mul"),
+            BinopEnum::Divide => self.builder.build_int_signed_div(left, right, "div"),
+        }
+        .into_diagnostic()?;
 
-        Ok(Some(add.into()))
+        Ok(Some(result.into()))
     }
 }
