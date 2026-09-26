@@ -31,6 +31,7 @@ use miette::Result;
 
 pub mod code_generator;
 pub mod deprecated;
+pub mod expression_max_depth;
 pub mod into_span;
 pub mod pretty;
 pub mod unreachable;

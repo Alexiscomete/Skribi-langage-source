@@ -2,7 +2,10 @@ use log::error;
 use std::fmt::{Display, Error, Formatter};
 
 use crate::{
-    ast::{nodes::FileTreeRoot, visitors::AstMutVisitor},
+    ast::{
+        nodes::FileTreeRoot,
+        visitors::{AstMutVisitor, expression_max_depth::expression_max_depth},
+    },
     interner::get_interner_typed,
 };
 
@@ -52,12 +55,23 @@ impl AstMutVisitor<'_, (), Error> for PrettyPrinterVisitor<'_, '_> {
         &mut self,
         expression: &crate::ast::nodes::expressions::Expression,
     ) -> miette::Result<(), Error> {
+        let depth = expression_max_depth(expression).unwrap_or(0);
         self.indent += IDENT;
-        write_self_indent!(self, "(\n")?;
+        if depth > 1 {
+            write_self!(self, "(")?;
+        }
+        if depth > 2 {
+            write_self_indent!(self, "\n")?;
+        }
         self.default_expression(expression)?;
         self.indent -= IDENT;
-        write_self_indent!(self, "\n")?;
-        write_self!(self, ")")
+        if depth > 2 {
+            write_self_indent!(self, "\n")?;
+        }
+        if depth > 1 {
+            write_self!(self, ")")?;
+        }
+        Ok(())
     }
 
     fn visit_deprecated(

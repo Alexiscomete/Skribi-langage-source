@@ -44,8 +44,6 @@ impl AstVisitor<'_, SimpleSpan> for IntoSpanVisitor {
     }
 }
 
-// Complete this section by adding new From impl
-
 impl From<&Statement> for Result<SimpleSpan> {
     fn from(value: &Statement) -> Self {
         let visitor = IntoSpanVisitor {};

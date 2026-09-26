@@ -11,26 +11,12 @@ exit_code: 0
 ----- stdout -----
 File resources/test_programs/exit.skrb AST is:
 DEPRECATED [skr_app should not be used]
-(
-    exit()
-)
-(
-    exit()
-)
-(
-    exit()
-)
-(
-    exit()
-)
-(
-    exit()
-)
-(
-    exit((
-          a()
-     ))
-)
+exit()
+exit()
+exit()
+exit()
+exit()
+(exit(a()))
 
 
 ----- stderr -----
