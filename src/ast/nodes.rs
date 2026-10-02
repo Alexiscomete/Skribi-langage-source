@@ -14,6 +14,7 @@ use crate::{
 
 pub mod binop;
 pub mod calls;
+pub mod declarations;
 pub mod deprecated;
 pub mod expressions;
 pub mod numbers;

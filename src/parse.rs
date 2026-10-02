@@ -4,7 +4,7 @@ use chumsky::input::{Input, Stream, ValueInput};
 use chumsky::prelude::{choice, empty, just, recursive, via_parser};
 use chumsky::primitive::one_of;
 use chumsky::span::SimpleSpan;
-use chumsky::{Boxed, IterParser, Parser, extra};
+use chumsky::{Boxed, IterParser, Parser, extra, select};
 use logos::Span;
 use miette::{Diagnostic, LabeledSpan, Result, SourceSpan, miette};
 use string_interner::DefaultSymbol;
@@ -12,6 +12,7 @@ use thiserror::Error;
 
 use crate::ast::nodes::FileTreeRoot;
 use crate::ast::nodes::binop::Binop;
+use crate::ast::nodes::declarations::variable::VariableDeclaration;
 use crate::ast::nodes::expressions::Expression::{self};
 use crate::ast::nodes::statements::Statement;
 use crate::interner::INTERNER;
@@ -26,10 +27,31 @@ pub mod number;
 // compilation time decreases. This is like INTERCAL, you need to say please
 // sometimes.
 
-// This functions define abstract parsers that will be instancieted by chumsky.
+// These functions define abstract parsers that will be instancieted by chumsky.
 // This does not actually parse anything.
 
-fn list_binop_parser<'tok, 'src: 'tok, I>(
+pub fn variable_declaration_parser<'tok, I>(
+    exp: impl Parser<'tok, I, Expression, extra::Err<Rich<'tok, Tokens>>> + Clone + 'tok,
+) -> impl Parser<'tok, I, VariableDeclaration, extra::Err<Rich<'tok, Tokens>>> + Clone
+where
+    I: ValueInput<'tok, Token = Tokens, Span = SimpleSpan>,
+{
+    let identifier = select! {
+        Tokens::Identifier(str) => str
+    };
+
+    let commun =
+        identifier
+            .then(identifier)
+            .then(exp)
+            .map_with(|((name, allocated_type), exp), extra| {
+                VariableDeclaration::new(name.into(), allocated_type.into(), extra.span(), exp)
+            });
+
+    just(Tokens::IsDeclaration).ignore_then(commun.clone())
+}
+
+fn list_binop_parser<'tok, I>(
     elements: Vec<Tokens>,
     then: impl Parser<'tok, I, Expression, extra::Err<Rich<'tok, Tokens>>> + Clone,
 ) -> impl Parser<'tok, I, Expression, extra::Err<Rich<'tok, Tokens>>> + Clone
@@ -46,7 +68,7 @@ where
         })
 }
 
-pub fn binop_parser<'tok, 'src: 'tok, I>(
+pub fn binop_parser<'tok, I>(
     exp: Boxed<'tok, '_, I, Expression, Full<Rich<'tok, Tokens>, (), ()>>,
 ) -> impl Parser<'tok, I, Expression, extra::Err<Rich<'tok, Tokens>>> + Clone
 where
@@ -58,7 +80,7 @@ where
     binary_pm.labelled("binop")
 }
 
-fn expression_parser<'tok, 'src: 'tok, I>()
+fn expression_parser<'tok, I>()
 -> impl Parser<'tok, I, Expression, extra::Err<Rich<'tok, Tokens>>> + Clone + 'tok
 where
     I: ValueInput<'tok, Token = Tokens, Span = SimpleSpan>,
@@ -77,6 +99,7 @@ where
                 just(Tokens::RightParenthesis)
                     .recover_with(via_parser(empty().to(Tokens::RightParenthesis))),
             ),
+            variable_declaration_parser(exp.clone()).map(|x| Expression::VariableDeclaration(x)),
             number,
         ))
         .boxed();

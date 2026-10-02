@@ -27,6 +27,7 @@ use crate::ast::nodes::deprecated::Deprecated;
 use crate::ast::nodes::expressions::Expression;
 use crate::ast::nodes::numbers::Number;
 use crate::ast::nodes::statements::Statement;
+use crate::ast::nodes::declarations::variable::VariableDeclaration;
 use miette::Result;
 
 pub mod code_generator;
@@ -136,6 +137,7 @@ macro_rules! make_ast_visitor {
                     Expression::FunctionCall(function_call) => self.visit_function_call(function_call),
                     Expression::Number(number) => self.visit_number(number),
                     Expression::Binop(binop) => self.visit_binop(binop),
+                    Expression::VariableDeclaration(variable_declaration) => self.visit_variable_declaration(variable_declaration),
                 }
             }
 
@@ -191,6 +193,20 @@ macro_rules! make_ast_visitor {
                 } else {
                     Self::default_t(DefaultCause::ZeroElements)
                 }
+            }
+
+            fn visit_variable_declaration(
+                &$($self_mutable)? self,
+                variable_declaration: &$($mutable)? VariableDeclaration,
+            ) -> Result<T, R> {
+                self.default_variable_declaration(variable_declaration)
+            }
+
+            fn default_variable_declaration(
+                &$($self_mutable)? self,
+                variable_declaration: &$($mutable)? VariableDeclaration,
+            ) -> Result<T, R> {
+                self.visit_expression(&$($mutable)? variable_declaration.arg)
             }
         }
     };

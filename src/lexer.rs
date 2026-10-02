@@ -24,6 +24,8 @@ pub enum Tokens {
     /// still there to test compatibility
     #[token("skr_app")]
     NativeCall,
+    #[token(".")]
+    IsDeclaration,
 
     #[token("(")]
     LeftParenthesis,
@@ -88,6 +90,7 @@ impl Display for Tokens {
                     Self::Ignore => " ",
                     Self::NativeCall => "skr_app",
                     Self::Plus => "+",
+                    Self::IsDeclaration => ".",
                     // WARNING: when adding tokens, always check the above list
                     _ => unreachable!(),
                 }
