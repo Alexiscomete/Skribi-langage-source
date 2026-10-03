@@ -20,14 +20,15 @@
 //!
 //! Visitors are the heart of a compiler.
 
+use crate::ast::nodes::declarations::variable_interner::{VariableLocked};
 use crate::ast::nodes::FileTreeRoot;
 use crate::ast::nodes::binop::Binop;
 use crate::ast::nodes::calls::functions::FunctionCall;
+use crate::ast::nodes::declarations::variable::VariableDeclaration;
 use crate::ast::nodes::deprecated::Deprecated;
 use crate::ast::nodes::expressions::Expression;
 use crate::ast::nodes::numbers::Number;
 use crate::ast::nodes::statements::Statement;
-use crate::ast::nodes::declarations::variable::VariableDeclaration;
 use miette::Result;
 
 pub mod code_generator;
@@ -61,6 +62,8 @@ macro_rules! make_ast_visitor {
             /// Considere it lazy: you can throw an exception
             /// if it should never be reached.
             fn default_t(cause: DefaultCause) -> Result<T, R>;
+
+            fn get_variable_interner() -> Result<VariableLocked, R>;
 
             fn aggregate_t(mut current: Option<T>, new: T) -> Option<T> {
                 // To avoid unused warnings
@@ -137,7 +140,11 @@ macro_rules! make_ast_visitor {
                     Expression::FunctionCall(function_call) => self.visit_function_call(function_call),
                     Expression::Number(number) => self.visit_number(number),
                     Expression::Binop(binop) => self.visit_binop(binop),
-                    Expression::VariableDeclaration(variable_declaration) => self.visit_variable_declaration(variable_declaration),
+                    Expression::VariableDeclaration(variable_declaration) => {
+                        let mut interner = Self::get_variable_interner()?;
+                        let result = &mut interner[variable_declaration.clone()];
+                        self.visit_variable_declaration(result)
+                    }
                 }
             }
 

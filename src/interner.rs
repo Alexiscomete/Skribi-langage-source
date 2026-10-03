@@ -6,8 +6,7 @@ use string_interner::DefaultStringInterner;
 
 pub type Interner = LazyLock<DefaultStringInterner>;
 
-/// WARNING: when possible, passing as an argument in prefered
-/// Access the lock once if possible
+/// WARNING: avoid passing as arguments, release the lock as soon as possible
 pub static INTERNER: Mutex<Interner> = Mutex::new(LazyLock::new(DefaultStringInterner::default));
 
 pub fn get_interner() -> Result<MutexGuard<'static, Interner>> {

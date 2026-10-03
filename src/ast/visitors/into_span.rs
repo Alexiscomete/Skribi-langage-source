@@ -3,13 +3,17 @@
 use chumsky::span::{SimpleSpan, Span};
 use miette::{Result, miette};
 
-use crate::ast::{nodes::statements::Statement, visitors::AstVisitor};
+use crate::ast::{nodes::{declarations::variable_interner::get_variable_interner, statements::Statement}, visitors::AstVisitor};
 
 struct IntoSpanVisitor {}
 
 impl AstVisitor<'_, SimpleSpan> for IntoSpanVisitor {
     fn default_t(_: super::DefaultCause) -> miette::Result<SimpleSpan, miette::Error> {
         Err(miette!("Cannot find a valid span for this element"))
+    }
+
+    fn get_variable_interner() -> Result<crate::ast::nodes::declarations::variable_interner::VariableLocked, miette::Error> {
+        get_variable_interner()
     }
 
     fn aggregate_t(mut current: Option<SimpleSpan>, new: SimpleSpan) -> Option<SimpleSpan> {

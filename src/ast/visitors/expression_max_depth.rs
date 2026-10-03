@@ -4,13 +4,17 @@
 
 use miette::Result;
 
-use crate::ast::{nodes::expressions::Expression, visitors::AstVisitor};
+use crate::ast::{nodes::{declarations::variable_interner::get_variable_interner, expressions::Expression}, visitors::AstVisitor};
 
 struct IntoSpanVisitor {}
 
 impl AstVisitor<'_, usize> for IntoSpanVisitor {
     fn default_t(_: super::DefaultCause) -> miette::Result<usize, miette::Error> {
         Ok(0)
+    }
+
+    fn get_variable_interner() -> Result<crate::ast::nodes::declarations::variable_interner::VariableLocked, miette::Error> {
+        get_variable_interner()
     }
 
     fn aggregate_t(mut current: Option<usize>, new: usize) -> Option<usize> {

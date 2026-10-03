@@ -1,7 +1,7 @@
 use miette::{Diagnostic, LabeledSpan, Result};
 use thiserror::Error;
 
-use crate::ast::{nodes::FileTreeRoot, visitors::AstMutVisitor};
+use crate::ast::{nodes::{FileTreeRoot, declarations::variable_interner::get_variable_interner}, visitors::AstMutVisitor};
 
 #[derive(Default)]
 pub struct DeprecatedNodesVisitor {
@@ -11,6 +11,10 @@ pub struct DeprecatedNodesVisitor {
 impl AstMutVisitor<'_, ()> for DeprecatedNodesVisitor {
     fn default_t(_: super::DefaultCause) -> miette::Result<(), miette::Error> {
         Ok(())
+    }
+
+    fn get_variable_interner() -> Result<crate::ast::nodes::declarations::variable_interner::VariableLocked, miette::Error> {
+        get_variable_interner()
     }
 
     fn visit_deprecated(

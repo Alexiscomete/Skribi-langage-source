@@ -99,7 +99,12 @@ where
                 just(Tokens::RightParenthesis)
                     .recover_with(via_parser(empty().to(Tokens::RightParenthesis))),
             ),
-            variable_declaration_parser(exp.clone()).map(|x| Expression::VariableDeclaration(x)),
+            variable_declaration_parser(exp.clone()).try_map(|x, s| {
+                Ok(Expression::VariableDeclaration(
+                    x.try_into()
+                        .map_err(|_| Rich::custom(s, "Cannot get the lock"))?,
+                ))
+            }),
             number,
         ))
         .boxed();

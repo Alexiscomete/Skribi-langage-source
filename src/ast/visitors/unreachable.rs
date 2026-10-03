@@ -7,10 +7,8 @@ use thiserror::Error;
 
 use crate::{
     ast::{
-        nodes::{FileTreeRoot, into_str},
-        visitors::{DefaultCause, MutAstMutVisitor},
-    },
-    interner::get_interner,
+        nodes::{FileTreeRoot, declarations::variable_interner::get_variable_interner, into_str}, visitors::{DefaultCause, MutAstMutVisitor},
+    }, interner::get_interner,
 };
 
 #[derive(Error, Debug, Diagnostic)]
@@ -49,6 +47,10 @@ enum PruneState {
 impl MutAstMutVisitor<'_, PruneState> for UnreachableVisitor {
     fn default_t(_: super::DefaultCause) -> miette::Result<PruneState, miette::Error> {
         Ok(PruneState::Default)
+    }
+
+    fn get_variable_interner() -> Result<crate::ast::nodes::declarations::variable_interner::VariableLocked, miette::Error> {
+        get_variable_interner()
     }
 
     fn visit_function_call(

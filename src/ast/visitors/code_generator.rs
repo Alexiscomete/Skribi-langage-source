@@ -12,6 +12,7 @@ use log::{debug, trace};
 use miette::{Context, IntoDiagnostic, Result, miette};
 
 use crate::ast::nodes::binop::BinopEnum;
+use crate::ast::nodes::declarations::variable_interner::get_variable_interner;
 use crate::ast::nodes::into_str;
 use crate::ast::{nodes::FileTreeRoot, visitors::AstMutVisitor};
 use crate::interner::get_interner;
@@ -228,6 +229,10 @@ impl<'ctx> CodeGenerator<'ctx> {
 impl<'ctx> AstMutVisitor<'_, Ret<'ctx>> for CodeGenerator<'ctx> {
     fn default_t(_: super::DefaultCause) -> miette::Result<Ret<'static>, miette::Error> {
         Ok(None)
+    }
+
+    fn get_variable_interner() -> Result<crate::ast::nodes::declarations::variable_interner::VariableLocked, miette::Error> {
+        get_variable_interner()
     }
 
     fn visit_function_call(
