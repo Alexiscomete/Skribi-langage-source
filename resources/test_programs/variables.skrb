@@ -1,2 +1,3 @@
 . int a 5
-exit(a)
+. int b a + 5
+exit(a + b)

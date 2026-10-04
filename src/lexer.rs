@@ -90,6 +90,9 @@ impl Display for Tokens {
                     Self::Ignore => " ",
                     Self::NativeCall => "skr_app",
                     Self::Plus => "+",
+                    Self::Minus => "-",
+                    Self::Div => "/",
+                    Self::Mul => "*",
                     Self::IsDeclaration => ".",
                     // WARNING: when adding tokens, always check the above list
                     _ => unreachable!(),

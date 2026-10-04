@@ -93,7 +93,9 @@ where
         let number = number_parser().map(Expression::Number);
         let identifier = select! {
             Tokens::Identifier(id) => id
-        };
+        }
+        .map_with(|v, x| Expression::VariableUsage(VariableUsage::new(v, x.span())));
+        let function_call = function_call_parser(exp.clone().boxed()).map(Expression::FunctionCall);
 
         // Anything that starts with a special unique token
         // --> has maximal priority and can be in anything
@@ -106,14 +108,12 @@ where
             variable_declaration_parser(exp.clone())
                 .map(|x| Expression::VariableDeclaration(x.into())),
             number,
+            function_call,
+            identifier,
         ))
         .boxed();
 
-        let other = choice((
-            priority.clone(),
-            function_call_parser(exp.boxed().clone()).map(Expression::FunctionCall),
-            identifier.map_with(|v, x| Expression::VariableUsage(VariableUsage::new(v, x.span()))),
-        ));
+        let other = choice((priority.clone(),));
 
         choice((binop_parser(priority.boxed().clone()), other))
     })
@@ -326,5 +326,19 @@ mod test {
         let src = ". int a 5 exit(a)";
         let tokens = tokenise(src).unwrap();
         assert_snapshot!("variable usage", parse(tokens, src.len()).unwrap(), src);
+    }
+
+    #[test]
+    fn parse_variable_and_usage_2() {
+        let src = ". int a 5 exit(1 + a)";
+        let tokens = tokenise(src).unwrap();
+        assert_snapshot!("variable usage 2", parse(tokens, src.len()).unwrap(), src);
+    }
+
+    #[test]
+    fn parse_variable_and_usage_3() {
+        let src = ". int a 5 exit(a + 1)";
+        let tokens = tokenise(src).unwrap();
+        assert_snapshot!("variable usage 3", parse(tokens, src.len()).unwrap(), src);
     }
 }

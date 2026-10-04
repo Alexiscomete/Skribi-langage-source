@@ -1,0 +1,8 @@
+---
+source: src/parse.rs
+expression: ". int a 5 exit(a + 1)"
+---
+(. a int (5))
+(
+     exit((a + 1))
+)

@@ -42,15 +42,28 @@ Err(
                 ],
             },
             ParsingSingleError {
-                message: "found ')' expected 'skr_app', expression, or end of input",
+                message: "found ')' expected '*', '/', '+', '-', 'skr_app', expression, or end of input in expression at 20..34",
                 span: SourceSpan {
                     offset: SourceOffset(
                         34,
                     ),
                     length: 1,
                 },
-                span_message: "found ')' expected 'skr_app', expression, or end of input",
-                spans: [],
+                span_message: "found ')' expected '*', '/', '+', '-', 'skr_app', expression, or end of input",
+                spans: [
+                    LabeledSpan {
+                        label: Some(
+                            "parsing expression",
+                        ),
+                        span: SourceSpan {
+                            offset: SourceOffset(
+                                20,
+                            ),
+                            length: 14,
+                        },
+                        primary: false,
+                    },
+                ],
             },
         ],
     },
