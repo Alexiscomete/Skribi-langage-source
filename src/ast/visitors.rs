@@ -20,7 +20,6 @@
 //!
 //! Visitors are the heart of a compiler.
 
-use crate::ast::nodes::declarations::variable_interner::{VariableLocked};
 use crate::ast::nodes::FileTreeRoot;
 use crate::ast::nodes::binop::Binop;
 use crate::ast::nodes::calls::functions::FunctionCall;
@@ -46,6 +45,15 @@ pub enum DefaultCause {
     Number,
 }
 
+macro_rules! dispatch_mutable {
+    (mut $mut_case:expr, $case:expr) => {
+        $mut_case
+    };
+    ($mut_case:expr, $case:expr) => {
+        $case
+    };
+}
+
 // I think I have chosen an evil syntax, but the result is nice
 macro_rules! make_ast_visitor {
     ($trait_name: ident self=&$($self_mutable:ident)?, ast=&$($mutable:ident)?) => {
@@ -62,8 +70,6 @@ macro_rules! make_ast_visitor {
             /// Considere it lazy: you can throw an exception
             /// if it should never be reached.
             fn default_t(cause: DefaultCause) -> Result<T, R>;
-
-            fn get_variable_interner() -> Result<VariableLocked, R>;
 
             fn aggregate_t(mut current: Option<T>, new: T) -> Option<T> {
                 // To avoid unused warnings
@@ -141,9 +147,11 @@ macro_rules! make_ast_visitor {
                     Expression::Number(number) => self.visit_number(number),
                     Expression::Binop(binop) => self.visit_binop(binop),
                     Expression::VariableDeclaration(variable_declaration) => {
-                        let mut interner = Self::get_variable_interner()?;
-                        let result = &mut interner[variable_declaration.clone()];
-                        self.visit_variable_declaration(result)
+                        dispatch_mutable!($($mutable)? (
+                            variable_declaration.write(|v| self.visit_variable_declaration(v))
+                        ), (
+                            variable_declaration.read(|v| self.visit_variable_declaration(v))
+                        ))
                     }
                 }
             }

@@ -89,7 +89,7 @@ where
     // This is over complicated as more rules will be added
 
     recursive(|exp| {
-        let number = number_parser().map(|x| Expression::Number(x));
+        let number = number_parser().map(Expression::Number);
 
         // Anything that starts with a special unique token
         // --> has maximal priority and can be in anything
@@ -99,12 +99,8 @@ where
                 just(Tokens::RightParenthesis)
                     .recover_with(via_parser(empty().to(Tokens::RightParenthesis))),
             ),
-            variable_declaration_parser(exp.clone()).try_map(|x, s| {
-                Ok(Expression::VariableDeclaration(
-                    x.try_into()
-                        .map_err(|_| Rich::custom(s, "Cannot get the lock"))?,
-                ))
-            }),
+            variable_declaration_parser(exp.clone())
+                .map(|x| Expression::VariableDeclaration(x.into())),
             number,
         ))
         .boxed();

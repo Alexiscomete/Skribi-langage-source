@@ -1,19 +1,8 @@
+use std::{cell::RefCell, rc::Rc};
+
 use chumsky::span::SimpleSpan;
-use la_arena::Idx;
-use miette::Result;
 
-use crate::ast::nodes::{
-    SymbolWrapper,
-    declarations::variable_interner::{get_variable_interner},
-    expressions::Expression,
-};
-
-/// Dynamic ownership warning:
-/// Why this type? The variable declaration node must be referenced in its
-/// usages, and they _may_ change some properties of the declaration. So we
-/// need mutability and shared reference.
-/// Why a pub type? We may want to change this to an arena later.
-pub type VariableDeclarationRef = Idx<VariableDeclaration>;
+use crate::ast::nodes::{SymbolWrapper, expressions::Expression};
 
 #[derive(PartialEq, Clone, Debug)]
 pub struct VariableDeclaration {
@@ -39,11 +28,38 @@ impl VariableDeclaration {
     }
 }
 
-impl TryFrom<VariableDeclaration> for VariableDeclarationRef {
-    type Error = miette::Error;
+/// Dynamic ownership warning:
+/// Why this type? The variable declaration node must be referenced in its
+/// usages, and they _may_ change some properties of the declaration. So we
+/// need mutability and shared reference.
+/// Why a pub type? We may want to change this to an arena later.
+#[derive(PartialEq, Clone, Debug)]
+pub struct VariableDeclarationRef {
+    content: Rc<RefCell<VariableDeclaration>>,
+}
 
-    fn try_from(value: VariableDeclaration) -> Result<Self, Self::Error> {
-        let mut interner = get_variable_interner()?;
-        Ok(interner.alloc(value))
+impl VariableDeclarationRef {
+    pub fn read<F, R>(&self, f: F) -> R
+    where
+        F: FnOnce(&VariableDeclaration) -> R,
+    {
+        let guard = self.content.borrow();
+        f(&guard)
+    }
+
+    pub fn write<F, R>(&self, f: F) -> R
+    where
+        F: FnOnce(&mut VariableDeclaration) -> R,
+    {
+        let mut guard = self.content.borrow_mut();
+        f(&mut guard)
+    }
+}
+
+impl From<VariableDeclaration> for VariableDeclarationRef {
+    fn from(value: VariableDeclaration) -> Self {
+        VariableDeclarationRef {
+            content: Rc::new(RefCell::new(value)),
+        }
     }
 }

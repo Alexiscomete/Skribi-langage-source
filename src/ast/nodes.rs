@@ -52,7 +52,7 @@ impl From<SymbolWrapper> for DefaultSymbol {
     }
 }
 
-pub fn into_str<'a>(interner: &'a Interner, symbol: SymbolWrapper) -> &'a str {
+pub fn into_str(interner: &Interner, symbol: SymbolWrapper) -> &str {
     interner.resolve(symbol.into()).unwrap_or("ERROR")
 }
 

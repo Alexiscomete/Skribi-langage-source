@@ -3,8 +3,10 @@ use std::fmt::{Display, Error, Formatter};
 
 use crate::{
     ast::{
-        nodes::{FileTreeRoot, declarations::variable_interner::get_variable_interner_typed}, visitors::{AstMutVisitor, expression_max_depth::expression_max_depth},
-    }, interner::get_interner_typed,
+        nodes::FileTreeRoot,
+        visitors::{AstMutVisitor, expression_max_depth::expression_max_depth},
+    },
+    interner::get_interner_typed,
 };
 
 struct PrettyPrinterVisitor<'fmt_ref, 'fmt_object> {
@@ -39,10 +41,6 @@ macro_rules! write_self {
 impl AstMutVisitor<'_, (), Error> for PrettyPrinterVisitor<'_, '_> {
     fn default_t(_: super::DefaultCause) -> miette::Result<(), Error> {
         Ok(())
-    }
-
-    fn get_variable_interner() -> miette::Result<crate::ast::nodes::declarations::variable_interner::VariableLocked, Error> {
-        get_variable_interner_typed()
     }
 
     fn visit_statement(

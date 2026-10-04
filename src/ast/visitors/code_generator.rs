@@ -12,7 +12,6 @@ use log::{debug, trace};
 use miette::{Context, IntoDiagnostic, Result, miette};
 
 use crate::ast::nodes::binop::BinopEnum;
-use crate::ast::nodes::declarations::variable_interner::get_variable_interner;
 use crate::ast::nodes::into_str;
 use crate::ast::{nodes::FileTreeRoot, visitors::AstMutVisitor};
 use crate::interner::get_interner;
@@ -231,10 +230,6 @@ impl<'ctx> AstMutVisitor<'_, Ret<'ctx>> for CodeGenerator<'ctx> {
         Ok(None)
     }
 
-    fn get_variable_interner() -> Result<crate::ast::nodes::declarations::variable_interner::VariableLocked, miette::Error> {
-        get_variable_interner()
-    }
-
     fn visit_function_call(
         &mut self,
         function_call: &crate::ast::nodes::calls::functions::FunctionCall,
@@ -289,10 +284,10 @@ impl<'ctx> AstMutVisitor<'_, Ret<'ctx>> for CodeGenerator<'ctx> {
 
         let left = self
             .visit_expression(&binop.left)?
-            .map_or_else(|| Err(miette!("No valid left expression")), |v| Ok(v))?;
+            .map_or_else(|| Err(miette!("No valid left expression")), Ok)?;
         let right = self
             .visit_expression(&binop.right)?
-            .map_or_else(|| Err(miette!("No valid right expression")), |v| Ok(v))?;
+            .map_or_else(|| Err(miette!("No valid right expression")), Ok)?;
 
         let left = Self::to_int_math_value(left)?;
         let right = Self::to_int_math_value(right)?;
