@@ -6,7 +6,7 @@ use crate::ast::nodes::{SymbolWrapper, expressions::Expression};
 /// Represent a call to a function.
 /// TODO: add arguments.
 /// TODO: replace name with a full path.
-#[derive(PartialEq, Clone, Debug)]
+#[derive(Debug)]
 pub struct FunctionCall {
     pub name: SymbolWrapper,
     pub span: SimpleSpan,

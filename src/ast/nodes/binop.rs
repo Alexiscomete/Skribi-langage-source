@@ -2,7 +2,7 @@ use std::fmt::{Display, Write};
 
 use crate::{ast::nodes::expressions::Expression, lexer::Tokens};
 
-#[derive(PartialEq, Clone, Debug)]
+#[derive(Debug)]
 pub enum BinopEnum {
     Add,
     Substract,
@@ -33,7 +33,7 @@ impl Display for BinopEnum {
     }
 }
 
-#[derive(PartialEq, Clone, Debug)]
+#[derive(Debug)]
 pub struct Binop {
     pub left: Box<Expression>,
     pub right: Box<Expression>,

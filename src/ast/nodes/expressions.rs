@@ -3,7 +3,7 @@ use crate::ast::nodes::{
     numbers::Number,
 };
 
-#[derive(PartialEq, Clone, Debug)]
+#[derive(Debug)]
 pub enum Expression {
     FunctionCall(FunctionCall),
     Number(Number),

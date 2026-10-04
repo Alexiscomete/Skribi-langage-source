@@ -4,7 +4,7 @@ use chumsky::span::SimpleSpan;
 
 use crate::ast::nodes::{SymbolWrapper, expressions::Expression};
 
-#[derive(PartialEq, Clone, Debug)]
+#[derive(Debug)]
 pub struct VariableDeclaration {
     pub name: SymbolWrapper,
     pub allocated_type: SymbolWrapper,
@@ -33,7 +33,7 @@ impl VariableDeclaration {
 /// usages, and they _may_ change some properties of the declaration. So we
 /// need mutability and shared reference.
 /// Why a pub type? We may want to change this to an arena later.
-#[derive(PartialEq, Clone, Debug)]
+#[derive(Debug)]
 pub struct VariableDeclarationRef {
     content: Rc<RefCell<VariableDeclaration>>,
 }

@@ -1,6 +1,6 @@
 use crate::ast::nodes::{deprecated::Deprecated, expressions::Expression};
 
-#[derive(PartialEq, Clone, Debug)]
+#[derive(Debug)]
 pub enum Statement {
     Expression(Expression),
     Deprecated(Deprecated),
