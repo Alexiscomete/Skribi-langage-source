@@ -23,6 +23,7 @@
 use crate::ast::nodes::FileTreeRoot;
 use crate::ast::nodes::binop::Binop;
 use crate::ast::nodes::calls::functions::FunctionCall;
+use crate::ast::nodes::calls::variable::VariableUsage;
 use crate::ast::nodes::declarations::variable::VariableDeclaration;
 use crate::ast::nodes::deprecated::Deprecated;
 use crate::ast::nodes::expressions::Expression;
@@ -43,6 +44,7 @@ pub enum DefaultCause {
     Deprecated,
     FunctionCall,
     Number,
+    Identifier,
 }
 
 macro_rules! dispatch_mutable {
@@ -152,7 +154,8 @@ macro_rules! make_ast_visitor {
                         ), (
                             variable_declaration.read(|v| self.visit_variable_declaration(v))
                         ))
-                    }
+                    },
+                    Expression::VariableUsage(variable_usage) => self.visit_variable_usage(variable_usage)
                 }
             }
 
@@ -222,6 +225,21 @@ macro_rules! make_ast_visitor {
                 variable_declaration: &$($mutable)? VariableDeclaration,
             ) -> Result<T, R> {
                 self.visit_expression(&$($mutable)? variable_declaration.arg)
+            }
+
+            fn visit_variable_usage(
+                &$($self_mutable)? self,
+                variable_usage: &$($mutable)? VariableUsage,
+            ) -> Result<T, R> {
+                self.default_variable_usage(variable_usage)
+            }
+
+            fn default_variable_usage(
+                &$($self_mutable)? self,
+                #[allow(unused)]
+                variable_usage: &$($mutable)? VariableUsage,
+            ) -> Result<T, R> {
+                Self::default_t(DefaultCause::Identifier)
             }
         }
     };

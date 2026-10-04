@@ -1,5 +1,7 @@
 use crate::ast::nodes::{
-    binop::Binop, calls::functions::FunctionCall, declarations::variable::VariableDeclarationRef,
+    binop::Binop,
+    calls::{functions::FunctionCall, variable::VariableUsage},
+    declarations::variable::VariableDeclarationRef,
     numbers::Number,
 };
 
@@ -9,4 +11,5 @@ pub enum Expression {
     Number(Number),
     Binop(Binop),
     VariableDeclaration(VariableDeclarationRef),
+    VariableUsage(VariableUsage),
 }

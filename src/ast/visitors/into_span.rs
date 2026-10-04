@@ -42,6 +42,20 @@ impl AstVisitor<'_, SimpleSpan> for IntoSpanVisitor {
     ) -> Result<SimpleSpan, miette::Error> {
         Ok(number.span)
     }
+
+    fn visit_variable_declaration(
+        &self,
+        variable_declaration: &crate::ast::nodes::declarations::variable::VariableDeclaration,
+    ) -> Result<SimpleSpan, miette::Error> {
+        Ok(variable_declaration.span)
+    }
+
+    fn visit_variable_usage(
+        &self,
+        variable_usage: &crate::ast::nodes::calls::variable::VariableUsage,
+    ) -> Result<SimpleSpan, miette::Error> {
+        Ok(variable_usage.span)
+    }
 }
 
 impl From<&Statement> for Result<SimpleSpan> {

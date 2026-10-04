@@ -116,4 +116,34 @@ impl AstMutVisitor<'_, (), Error> for PrettyPrinterVisitor<'_, '_> {
         write_self!(self, " {} ", binop.binop)?;
         self.visit_expression(&binop.right)
     }
+
+    fn visit_variable_declaration(
+        &mut self,
+        variable_declaration: &crate::ast::nodes::declarations::variable::VariableDeclaration,
+    ) -> miette::Result<(), Error> {
+        {
+            let interner = get_interner_typed()?;
+            let name_type = interner
+                .resolve(variable_declaration.allocated_type.symbol)
+                .unwrap_or("ERROR");
+            let name = interner
+                .resolve(variable_declaration.name.symbol)
+                .unwrap_or("ERROR");
+            write_self!(self, ". {name_type} {name} (")?;
+        }
+
+        self.default_variable_declaration(variable_declaration)?;
+        write_self!(self, ")")
+    }
+
+    fn visit_variable_usage(
+        &mut self,
+        variable_usage: &crate::ast::nodes::calls::variable::VariableUsage,
+    ) -> miette::Result<(), Error> {
+        let interner = get_interner_typed()?;
+        let name = interner
+            .resolve(variable_usage.name.symbol)
+            .unwrap_or("ERROR");
+        write_self!(self, "{name}")
+    }
 }

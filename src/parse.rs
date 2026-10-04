@@ -12,6 +12,7 @@ use thiserror::Error;
 
 use crate::ast::nodes::FileTreeRoot;
 use crate::ast::nodes::binop::Binop;
+use crate::ast::nodes::calls::variable::VariableUsage;
 use crate::ast::nodes::declarations::variable::VariableDeclaration;
 use crate::ast::nodes::expressions::Expression::{self};
 use crate::ast::nodes::statements::Statement;
@@ -90,6 +91,9 @@ where
 
     recursive(|exp| {
         let number = number_parser().map(Expression::Number);
+        let identifier = select! {
+            Tokens::Identifier(id) => id
+        };
 
         // Anything that starts with a special unique token
         // --> has maximal priority and can be in anything
@@ -108,6 +112,7 @@ where
         let other = choice((
             priority.clone(),
             function_call_parser(exp.boxed().clone()).map(Expression::FunctionCall),
+            identifier.map_with(|v, x| Expression::VariableUsage(VariableUsage::new(v, x.span()))),
         ));
 
         choice((binop_parser(priority.boxed().clone()), other))
@@ -307,5 +312,19 @@ mod test {
         let src = "exit(1+2-3*2/1*5-0)";
         let tokens = tokenise(src).unwrap();
         assert_snapshot!("multiplication", parse(tokens, src.len()).unwrap(), src);
+    }
+
+    #[test]
+    fn parse_variable() {
+        let src = ". int a 5";
+        let tokens = tokenise(src).unwrap();
+        assert_snapshot!("variable", parse(tokens, src.len()).unwrap(), src);
+    }
+
+    #[test]
+    fn parse_variable_and_usage() {
+        let src = ". int a 5 exit(a)";
+        let tokens = tokenise(src).unwrap();
+        assert_snapshot!("variable usage", parse(tokens, src.len()).unwrap(), src);
     }
 }
