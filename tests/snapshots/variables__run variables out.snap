@@ -1,0 +1,13 @@
+---
+source: tests/variables.rs
+info:
+  program: variables.out
+  args: []
+---
+success: false
+exit_code: 5
+----- stdout -----
+5
+10
+
+----- stderr -----

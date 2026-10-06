@@ -53,6 +53,7 @@ impl Scope {
 #[derive(Default)]
 pub struct Binder {
     root: Option<Box<Scope>>,
+    current_id: usize,
 }
 
 impl Binder {
@@ -118,6 +119,8 @@ impl MutAstMutVisitor<'_, ()> for Binder {
         } else if let Some(scope) = &mut self.root {
             trace!("Declaring {name}");
             scope.map.insert(name, variable_declaration.clone());
+            variable_declaration.write(|v| v.id = self.current_id);
+            self.current_id += 1;
             Ok(())
         } else {
             let span_to: SimpleSpan = variable_declaration.clone().try_into()?;

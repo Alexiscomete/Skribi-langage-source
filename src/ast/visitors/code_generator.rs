@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::fs::create_dir_all;
 use std::path::Path;
 
@@ -23,6 +24,7 @@ pub struct CodeGenerator<'ctx> {
     module: Module<'ctx>,
     builder: Builder<'ctx>,
     main_empty: bool,
+    var_values: HashMap<usize, BasicMetadataValueEnum<'ctx>>,
 }
 
 impl<'ctx> CodeGenerator<'ctx> {
@@ -210,6 +212,7 @@ impl<'ctx> CodeGenerator<'ctx> {
             module,
             builder,
             main_empty: true,
+            var_values: HashMap::new(),
         };
         compiler.create_base()?;
         compiler.visit_file_tree_root(root)?;
@@ -301,5 +304,37 @@ impl<'ctx> AstMutVisitor<'_, Ret<'ctx>> for CodeGenerator<'ctx> {
         .into_diagnostic()?;
 
         Ok(Some(result.into()))
+    }
+
+    fn visit_variable_declaration(
+        &mut self,
+        variable_declaration: &crate::ast::nodes::declarations::variable::VariableDeclarationRef,
+    ) -> Result<Ret<'ctx>, miette::Error> {
+        let content = self
+            .default_variable_declaration(variable_declaration)?
+            .wrap_err("No valid content")?;
+
+        self.var_values
+            .insert(variable_declaration.read(|v| v.id), content);
+
+        Ok(Some(content))
+    }
+
+    fn visit_variable_usage(
+        &mut self,
+        variable_usage: &crate::ast::nodes::calls::variable::VariableUsage,
+    ) -> Result<Ret<'ctx>, miette::Error> {
+        Ok(Some(
+            self.var_values
+                .get(
+                    &variable_usage
+                        .declaration
+                        .clone()
+                        .wrap_err("Undeclared declared variable")?
+                        .read(|v| v.id),
+                )
+                .wrap_err("Declared variable was removed from AST")?
+                .clone(),
+        ))
     }
 }

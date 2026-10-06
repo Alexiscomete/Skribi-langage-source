@@ -10,6 +10,7 @@ pub struct VariableDeclaration {
     pub allocated_type: SymbolWrapper,
     pub span: SimpleSpan,
     pub arg: Box<Expression>,
+    pub id: usize,
 }
 
 impl VariableDeclaration {
@@ -24,6 +25,7 @@ impl VariableDeclaration {
             allocated_type,
             span,
             arg: Box::new(arg),
+            id: 0,
         }
     }
 }

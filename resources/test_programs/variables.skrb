@@ -1,3 +1,5 @@
 . int a 5
+println(a)
 . int b a + 5
-exit(a + b)
+println(b)
+exit(b - a)
