@@ -35,7 +35,7 @@ impl FileTreeRoot {
     }
 }
 
-#[derive(Clone, PartialEq, Copy)]
+#[derive(Clone, PartialEq, Copy, Hash, Eq)]
 pub struct SymbolWrapper {
     pub symbol: DefaultSymbol,
 }

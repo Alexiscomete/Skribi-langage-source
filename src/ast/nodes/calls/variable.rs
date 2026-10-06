@@ -1,12 +1,13 @@
 use chumsky::span::SimpleSpan;
 use string_interner::DefaultSymbol;
 
-use crate::ast::nodes::SymbolWrapper;
+use crate::ast::nodes::{SymbolWrapper, declarations::variable::VariableDeclarationRef};
 
 #[derive(Debug)]
 pub struct VariableUsage {
     pub name: SymbolWrapper,
     pub span: SimpleSpan,
+    pub declaration: Option<VariableDeclarationRef>,
 }
 
 impl VariableUsage {
@@ -14,6 +15,7 @@ impl VariableUsage {
         Self {
             name: name.into(),
             span,
+            declaration: None,
         }
     }
 }

@@ -8,7 +8,7 @@ use crate::{
     ast::{
         nodes::FileTreeRoot,
         visitors::{
-            code_generator::CodeGenerator, deprecated::DeprecatedNodesVisitor,
+            binding::Binder, code_generator::CodeGenerator, deprecated::DeprecatedNodesVisitor,
             unreachable::UnreachableVisitor,
         },
     },
@@ -64,6 +64,11 @@ impl Source {
             let report = report.with_source_code(self.file.create_source());
             warn!("Warning: {:?}", report);
         }
+
+        Binder::bind(&mut self.root).map_err(|err| {
+            let report: Report = err.into();
+            report.with_source_code(self.file.create_source())
+        })?;
 
         CodeGenerator::compile(&self.root, &self.file.name, folder)
             .context(format!("While compiling file `{}`", self.file.name))

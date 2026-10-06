@@ -45,7 +45,7 @@ where
         identifier
             .then(identifier)
             .then(exp)
-            .map_with(|((name, allocated_type), exp), extra| {
+            .map_with(|((allocated_type, name), exp), extra| {
                 VariableDeclaration::new(name.into(), allocated_type.into(), extra.span(), exp)
             });
 

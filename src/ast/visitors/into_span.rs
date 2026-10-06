@@ -3,7 +3,13 @@
 use chumsky::span::{SimpleSpan, Span};
 use miette::{Result, miette};
 
-use crate::ast::{nodes::statements::Statement, visitors::AstVisitor};
+use crate::ast::{
+    nodes::{
+        calls::variable::VariableUsage, declarations::variable::VariableDeclarationRef,
+        statements::Statement,
+    },
+    visitors::AstVisitor,
+};
 
 struct IntoSpanVisitor {}
 
@@ -45,9 +51,9 @@ impl AstVisitor<'_, SimpleSpan> for IntoSpanVisitor {
 
     fn visit_variable_declaration(
         &self,
-        variable_declaration: &crate::ast::nodes::declarations::variable::VariableDeclaration,
+        variable_declaration: &crate::ast::nodes::declarations::variable::VariableDeclarationRef,
     ) -> Result<SimpleSpan, miette::Error> {
-        Ok(variable_declaration.span)
+        Ok(variable_declaration.read(|v| v.span))
     }
 
     fn visit_variable_usage(
@@ -62,5 +68,23 @@ impl From<&Statement> for Result<SimpleSpan> {
     fn from(value: &Statement) -> Self {
         let visitor = IntoSpanVisitor {};
         visitor.visit_statement(value)
+    }
+}
+
+impl TryFrom<VariableDeclarationRef> for SimpleSpan {
+    type Error = miette::ErrReport;
+
+    fn try_from(value: VariableDeclarationRef) -> Result<Self> {
+        let visitor = IntoSpanVisitor {};
+        visitor.visit_variable_declaration(&value)
+    }
+}
+
+impl TryFrom<&mut VariableUsage> for SimpleSpan {
+    type Error = miette::ErrReport;
+
+    fn try_from(value: &mut VariableUsage) -> Result<Self> {
+        let visitor = IntoSpanVisitor {};
+        visitor.visit_variable_usage(value)
     }
 }

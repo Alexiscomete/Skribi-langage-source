@@ -33,7 +33,7 @@ impl VariableDeclaration {
 /// usages, and they _may_ change some properties of the declaration. So we
 /// need mutability and shared reference.
 /// Why a pub type? We may want to change this to an arena later.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct VariableDeclarationRef {
     content: Rc<RefCell<VariableDeclaration>>,
 }

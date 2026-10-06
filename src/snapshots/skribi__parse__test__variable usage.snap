@@ -2,5 +2,5 @@
 source: src/parse.rs
 expression: ". int a 5 exit(a)"
 ---
-(. a int (5))
+(. int a (5))
 (exit(a))

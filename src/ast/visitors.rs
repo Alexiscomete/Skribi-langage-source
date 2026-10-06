@@ -24,13 +24,14 @@ use crate::ast::nodes::FileTreeRoot;
 use crate::ast::nodes::binop::Binop;
 use crate::ast::nodes::calls::functions::FunctionCall;
 use crate::ast::nodes::calls::variable::VariableUsage;
-use crate::ast::nodes::declarations::variable::VariableDeclaration;
+use crate::ast::nodes::declarations::variable::VariableDeclarationRef;
 use crate::ast::nodes::deprecated::Deprecated;
 use crate::ast::nodes::expressions::Expression;
 use crate::ast::nodes::numbers::Number;
 use crate::ast::nodes::statements::Statement;
 use miette::Result;
 
+pub mod binding;
 pub mod code_generator;
 pub mod deprecated;
 pub mod expression_max_depth;
@@ -148,13 +149,7 @@ macro_rules! make_ast_visitor {
                     Expression::FunctionCall(function_call) => self.visit_function_call(function_call),
                     Expression::Number(number) => self.visit_number(number),
                     Expression::Binop(binop) => self.visit_binop(binop),
-                    Expression::VariableDeclaration(variable_declaration) => {
-                        dispatch_mutable!($($mutable)? (
-                            variable_declaration.write(|v| self.visit_variable_declaration(v))
-                        ), (
-                            variable_declaration.read(|v| self.visit_variable_declaration(v))
-                        ))
-                    },
+                    Expression::VariableDeclaration(variable_declaration) => self.visit_variable_declaration(variable_declaration),
                     Expression::VariableUsage(variable_usage) => self.visit_variable_usage(variable_usage)
                 }
             }
@@ -215,16 +210,20 @@ macro_rules! make_ast_visitor {
 
             fn visit_variable_declaration(
                 &$($self_mutable)? self,
-                variable_declaration: &$($mutable)? VariableDeclaration,
+                variable_declaration: &$($mutable)? VariableDeclarationRef,
             ) -> Result<T, R> {
                 self.default_variable_declaration(variable_declaration)
             }
 
             fn default_variable_declaration(
                 &$($self_mutable)? self,
-                variable_declaration: &$($mutable)? VariableDeclaration,
+                variable_declaration: &$($mutable)? VariableDeclarationRef,
             ) -> Result<T, R> {
-                self.visit_expression(&$($mutable)? variable_declaration.arg)
+                dispatch_mutable!($($mutable)? (
+                    variable_declaration.write(|v| self.visit_expression(&mut v.arg))
+                ), (
+                    variable_declaration.read(|v| self.visit_expression(&v.arg))
+                ))
             }
 
             fn visit_variable_usage(

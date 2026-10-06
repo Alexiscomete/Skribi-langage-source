@@ -2,4 +2,4 @@
 source: src/parse.rs
 expression: ". int a 5"
 ---
-(. a int (5))
+(. int a (5))
