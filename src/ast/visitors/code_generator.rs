@@ -6,8 +6,10 @@ use inkwell::AddressSpace;
 use inkwell::basic_block::BasicBlock;
 use inkwell::context::Context as InkContext;
 use inkwell::module::Linkage;
-use inkwell::types::{AnyTypeEnum, BasicMetadataTypeEnum, FunctionType};
-use inkwell::values::{BasicMetadataValueEnum, FunctionValue, IntValue, PointerValue};
+use inkwell::types::{AnyType, AnyTypeEnum, BasicMetadataTypeEnum, BasicTypeEnum, FunctionType};
+use inkwell::values::{
+    BasicMetadataValueEnum, BasicValueEnum, FunctionValue, IntValue, PointerValue,
+};
 use inkwell::{builder::Builder, module::Module};
 use log::{debug, trace};
 use miette::{Context, IntoDiagnostic, Result, miette};
@@ -17,14 +19,17 @@ use crate::ast::nodes::into_str;
 use crate::ast::{nodes::FileTreeRoot, visitors::AstMutVisitor};
 use crate::interner::get_interner;
 
-type Ret<'a> = Option<BasicMetadataValueEnum<'a>>;
+type ExpectedTypeType<'a> = BasicTypeEnum<'a>;
+type TypeType<'a> = Option<ExpectedTypeType<'a>>;
+type ValueType<'a> = BasicValueEnum<'a>;
+type Ret<'a> = Option<(BasicValueEnum<'a>, TypeType<'a>)>;
 
 pub struct CodeGenerator<'ctx> {
     context: &'ctx InkContext,
     module: Module<'ctx>,
     builder: Builder<'ctx>,
     main_empty: bool,
-    var_values: HashMap<usize, BasicMetadataValueEnum<'ctx>>,
+    var_values: HashMap<usize, (PointerValue<'ctx>, ExpectedTypeType<'ctx>)>,
 }
 
 impl<'ctx> CodeGenerator<'ctx> {
@@ -48,9 +53,9 @@ impl<'ctx> CodeGenerator<'ctx> {
         })
     }
 
-    fn to_int_math_value(value: BasicMetadataValueEnum<'ctx>) -> Result<IntValue<'ctx>> {
+    fn to_int_math_value(value: ValueType<'ctx>) -> Result<IntValue<'ctx>> {
         Ok(match value {
-            BasicMetadataValueEnum::IntValue(int_value) => int_value,
+            ValueType::IntValue(int_value) => int_value,
             _ => Err(miette!("Type not supported int type"))?,
         })
     }
@@ -58,12 +63,16 @@ impl<'ctx> CodeGenerator<'ctx> {
     fn import_function(
         &self,
         name: &str,
-        return_type: AnyTypeEnum<'ctx>,
+        return_type: TypeType<'ctx>,
         parameters_types: &[BasicMetadataTypeEnum<'ctx>],
         is_var_args: bool,
         linkage: Option<Linkage>,
     ) -> Result<FunctionValue<'ctx>> {
-        let main_function_type = Self::to_fn_type(return_type, parameters_types, is_var_args)?;
+        let main_function_type = Self::to_fn_type(
+            return_type.map_or_else(|| self.context.void_type().into(), |v| v.as_any_type_enum()),
+            parameters_types,
+            is_var_args,
+        )?;
         let main_function = self.module.add_function(name, main_function_type, linkage);
         Ok(main_function)
     }
@@ -71,20 +80,20 @@ impl<'ctx> CodeGenerator<'ctx> {
     fn get_or_import(
         &self,
         name: &str,
-        return_type: AnyTypeEnum<'ctx>,
+        return_type: TypeType<'ctx>,
         parameters_types: &[BasicMetadataTypeEnum<'ctx>],
         is_var_args: bool,
         linkage: Option<Linkage>,
-    ) -> Result<FunctionValue<'ctx>> {
+    ) -> Result<(FunctionValue<'ctx>, TypeType<'ctx>)> {
         Ok(if let Some(func) = self.module.get_function(name) {
-            func
+            (func, return_type)
         } else {
             let func =
                 self.import_function(name, return_type, parameters_types, is_var_args, linkage)?;
 
             trace!("Function {} declared", name);
 
-            func
+            (func, return_type)
         })
     }
 
@@ -93,7 +102,7 @@ impl<'ctx> CodeGenerator<'ctx> {
     fn create_function(
         &self,
         name: &str,
-        return_type: AnyTypeEnum<'ctx>,
+        return_type: TypeType<'ctx>,
         parameters_types: &[BasicMetadataTypeEnum<'ctx>],
         is_var_args: bool,
         linkage: Option<Linkage>,
@@ -109,7 +118,7 @@ impl<'ctx> CodeGenerator<'ctx> {
         // Create main function
         // TODO: add arguments
         let ret_type = self.context.i32_type();
-        let function = self.create_function("main", ret_type.into(), &[], false, None)?;
+        let function = self.create_function("main", Some(ret_type.into()), &[], false, None)?;
         self.goin(function);
         Ok(())
     }
@@ -131,22 +140,16 @@ impl<'ctx> CodeGenerator<'ctx> {
         Ok(())
     }
 
-    fn build_exit_call(&self, code: BasicMetadataValueEnum<'ctx>) -> Result<()> {
+    fn build_exit_call(&self, code: ValueType<'ctx>) -> Result<()> {
         let argument_type = self.context.i32_type();
 
-        let return_type = self.context.void_type();
-        let exit_function = self.get_or_import(
-            "exit",
-            return_type.into(),
-            &[argument_type.into()],
-            false,
-            None,
-        )?;
+        let exit_function =
+            self.get_or_import("exit", None, &[argument_type.into()], false, None)?;
 
         // We might want to simplify this later
         // Not enough data for now
         self.builder
-            .build_call(exit_function, &[code], "call_exit")
+            .build_call(exit_function.0, &[code.into()], "call_exit")
             .into_diagnostic()
             .context("While creating call to exit")?;
         self.builder
@@ -157,13 +160,13 @@ impl<'ctx> CodeGenerator<'ctx> {
         Ok(())
     }
 
-    fn build_print_fct(&self) -> Result<FunctionValue<'ctx>> {
+    fn build_print_fct(&self) -> Result<(FunctionValue<'ctx>, TypeType<'ctx>)> {
         let argument_type = self.context.ptr_type(AddressSpace::default());
         let return_type = self.context.i32_type();
 
         self.get_or_import(
             "printf",
-            return_type.into(),
+            Some(return_type.into()),
             &[argument_type.into()],
             true,
             None,
@@ -172,7 +175,7 @@ impl<'ctx> CodeGenerator<'ctx> {
 
     fn create_format_str(
         &self,
-        value: Option<BasicMetadataValueEnum<'ctx>>,
+        value: Option<ValueType<'ctx>>,
         name: &str,
     ) -> Result<PointerValue<'ctx>> {
         Ok(self
@@ -182,24 +185,25 @@ impl<'ctx> CodeGenerator<'ctx> {
             .as_pointer_value())
     }
 
-    fn build_print_call(&self, value: Option<BasicMetadataValueEnum<'ctx>>) -> Result<Ret<'ctx>> {
+    fn build_print_call(&self, value: Option<ValueType<'ctx>>) -> Result<Ret<'ctx>> {
         let print = self.build_print_fct()?;
         let format = self.create_format_str(value, "call_printf")?;
         let args: &[BasicMetadataValueEnum<'ctx>] = if let Some(value) = value {
-            &[format.into(), value]
+            &[format.into(), value.into()]
         } else {
             &[format.into()]
         };
 
-        Ok(Some(
+        Ok(Some((
             self.builder
-                .build_call(print, args, "call_printf")
+                .build_call(print.0, args, "call_printf")
                 .into_diagnostic()
                 .context("While creating call to printf")?
                 .try_as_basic_value()
                 .expect_basic("Printf always returns")
                 .into(),
-        ))
+            print.1,
+        )))
     }
 
     pub fn compile(root: &FileTreeRoot, name: &str, folder: &str) -> Result<()> {
@@ -250,15 +254,17 @@ impl<'ctx> AstMutVisitor<'_, Ret<'ctx>> for CodeGenerator<'ctx> {
         match name {
             "exit" => {
                 trace!("Found an exit call");
-                let arg =
-                    args.unwrap_or_else(|| self.context.i32_type().const_int(42, false).into());
+                let arg = args.map_or_else(
+                    || self.context.i32_type().const_int(42, false).into(),
+                    |v| v.0,
+                );
                 self.build_exit_call(arg)?;
                 self.main_empty = false;
                 trace!("Function called");
 
                 Ok(None)
             }
-            "println" => self.build_print_call(args),
+            "println" => self.build_print_call(args.map(|x| x.0)),
             _ => todo!("Cannot compile other functions for now"),
         }
     }
@@ -276,7 +282,7 @@ impl<'ctx> AstMutVisitor<'_, Ret<'ctx>> for CodeGenerator<'ctx> {
         debug!("Found number {}", value);
 
         let res = self.context.i32_type().const_int(value, false);
-        Ok(Some(res.into()))
+        Ok(Some((res.into(), Some(self.context.i32_type().into()))))
     }
 
     fn visit_binop(
@@ -285,15 +291,15 @@ impl<'ctx> AstMutVisitor<'_, Ret<'ctx>> for CodeGenerator<'ctx> {
     ) -> Result<Ret<'ctx>, miette::Error> {
         trace!("Compiling a binop");
 
-        let left = self
+        let base_left = self
             .visit_expression(&binop.left)?
             .map_or_else(|| Err(miette!("No valid left expression")), Ok)?;
-        let right = self
+        let base_right = self
             .visit_expression(&binop.right)?
             .map_or_else(|| Err(miette!("No valid right expression")), Ok)?;
 
-        let left = Self::to_int_math_value(left)?;
-        let right = Self::to_int_math_value(right)?;
+        let left = Self::to_int_math_value(base_left.0)?;
+        let right = Self::to_int_math_value(base_right.0)?;
 
         let result = match binop.binop {
             BinopEnum::Add => self.builder.build_int_add(left, right, "add"),
@@ -303,19 +309,34 @@ impl<'ctx> AstMutVisitor<'_, Ret<'ctx>> for CodeGenerator<'ctx> {
         }
         .into_diagnostic()?;
 
-        Ok(Some(result.into()))
+        debug!("Types are {:?} and {:?}", base_left.1, base_right.1);
+
+        Ok(Some((result.into(), base_left.1)))
     }
 
     fn visit_variable_declaration(
         &mut self,
         variable_declaration: &crate::ast::nodes::declarations::variable::VariableDeclarationRef,
     ) -> Result<Ret<'ctx>, miette::Error> {
+        trace!("Compiling a variable declaration");
+
         let content = self
             .default_variable_declaration(variable_declaration)?
             .wrap_err("No valid content")?;
 
+        debug!("Declaring {:?}", content);
+
+        let content_type = content.1.wrap_err("No valid type")?;
+
+        let allocated = self
+            .builder
+            .build_alloca(content_type, "var")
+            .into_diagnostic()?;
+
+        self.builder.build_store(allocated, content.0).into_diagnostic()?;
+
         self.var_values
-            .insert(variable_declaration.read(|v| v.id), content);
+            .insert(variable_declaration.read(|v| v.id), (allocated, content_type));
 
         Ok(Some(content))
     }
@@ -324,17 +345,27 @@ impl<'ctx> AstMutVisitor<'_, Ret<'ctx>> for CodeGenerator<'ctx> {
         &mut self,
         variable_usage: &crate::ast::nodes::calls::variable::VariableUsage,
     ) -> Result<Ret<'ctx>, miette::Error> {
-        Ok(Some(
-            self.var_values
-                .get(
-                    &variable_usage
-                        .declaration
-                        .clone()
-                        .wrap_err("Undeclared declared variable")?
-                        .read(|v| v.id),
-                )
-                .wrap_err("Declared variable was removed from AST")?
-                .clone(),
-        ))
+        trace!("Compiling a variable usage");
+
+        let stored = self
+            .var_values
+            .get(
+                &variable_usage
+                    .declaration
+                    .clone()
+                    .wrap_err("Undeclared declared variable")?
+                    .read(|v| v.id),
+            )
+            .wrap_err("Declared variable was removed from AST")?
+            .clone();
+
+        debug!("Stored is {:?}", stored);
+
+        Ok(Some((
+            self.builder
+                .build_load(stored.1, stored.0, "var")
+                .into_diagnostic()?,
+            Some(stored.1),
+        )))
     }
 }
