@@ -11,6 +11,7 @@ pub struct VariableDeclaration {
     pub span: SimpleSpan,
     pub arg: Box<Expression>,
     pub id: usize,
+    pub constant: bool,
 }
 
 impl VariableDeclaration {
@@ -26,6 +27,7 @@ impl VariableDeclaration {
             span,
             arg: Box::new(arg),
             id: 0,
+            constant: false,
         }
     }
 }
