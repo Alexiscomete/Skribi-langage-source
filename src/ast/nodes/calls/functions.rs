@@ -1,7 +1,10 @@
 use chumsky::span::SimpleSpan;
 use string_interner::DefaultSymbol;
 
-use crate::ast::nodes::{SymbolWrapper, expressions::Expression};
+use crate::{
+    ast::nodes::{SymbolWrapper, expressions::Expression},
+    bindings::DeclarationLink,
+};
 
 /// Represent a call to a function.
 /// TODO: add arguments.
@@ -11,6 +14,7 @@ pub struct FunctionCall {
     pub name: SymbolWrapper,
     pub span: SimpleSpan,
     pub arg: Option<Box<Expression>>,
+    pub declaration: Option<DeclarationLink>,
 }
 
 impl FunctionCall {
@@ -23,6 +27,7 @@ impl FunctionCall {
             name: name.into(),
             span,
             arg,
+            declaration: None,
         }
     }
 }

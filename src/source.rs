@@ -6,7 +6,7 @@ use std::sync::Arc;
 
 use crate::{
     ast::{
-        nodes::FileTreeRoot,
+        nodes::{FileTreeRoot, StateBinded, StateSimple},
         visitors::{
             binding::Binder, code_generator::CodeGenerator, deprecated::DeprecatedNodesVisitor,
             unreachable::UnreachableVisitor,
@@ -17,12 +17,12 @@ use crate::{
     parse::parse,
 };
 
-pub struct Source {
+pub struct Source<T = StateSimple> {
     // May be removed later as also stored in the FileTreeRoot
     // However, as it is not initialised directly (option) we may keep this
     // TODO: add first user of the file to remove this
     file: Arc<File>,
-    root: FileTreeRoot,
+    root: FileTreeRoot<T>,
 }
 
 fn get_root<'root, 'file: 'root>(file: Arc<File>) -> Result<FileTreeRoot> {
@@ -49,7 +49,7 @@ impl Source {
         Ok(Source { file, root })
     }
 
-    pub fn compile(&mut self, folder: &str) -> Result<()> {
+    pub fn bind(mut self) -> Result<Source<StateBinded>> {
         // Placeholder for later checks
         // May be moved later to the new function
         // Only do not do too much on a pull request
@@ -65,18 +65,27 @@ impl Source {
             warn!("Warning: {:?}", report);
         }
 
-        Binder::bind(&mut self.root).map_err(|err| {
+        let new_root = Binder::bind(self.root).map_err(|err| {
             let report: Report = err.into();
             report.with_source_code(self.file.create_source())
         })?;
 
+        Ok(Source {
+            file: self.file,
+            root: new_root,
+        })
+    }
+}
+
+impl Source<StateBinded> {
+    pub fn compile(&mut self, folder: &str) -> Result<()> {
         CodeGenerator::compile(&self.root, &self.file.name, folder)
             .context(format!("While compiling file `{}`", self.file.name))
     }
 }
 
-pub struct SourceManager {
-    files: HashMap<Arc<str>, Source>,
+pub struct SourceManager<T = StateSimple> {
+    files: HashMap<Arc<str>, Source<T>>,
 }
 
 fn link_files(inputs: Vec<String>, output: &str) -> Result<()> {
@@ -94,7 +103,7 @@ fn link_files(inputs: Vec<String>, output: &str) -> Result<()> {
 impl SourceManager {
     pub fn empty() -> Self {
         SourceManager {
-            files: HashMap::new(),
+            files: Default::default(),
         }
     }
 
@@ -107,9 +116,32 @@ impl SourceManager {
         Ok(())
     }
 
+    pub fn bind(self) -> Result<SourceManager<StateBinded>> {
+        trace!("Start binding sources");
+
+        let result = self
+            .files
+            .into_iter()
+            .map(|(name, file)| Ok((name, file.bind()?)))
+            .collect::<Result<HashMap<Arc<str>, Source<StateBinded>>>>()?;
+
+        Ok(SourceManager { files: result })
+    }
+
+    pub fn pretty(&self) -> Result<()> {
+        for (name, file) in &self.files {
+            std::println!("File {} AST is:\n{}", name, file.root);
+        }
+        Ok(())
+    }
+}
+
+impl SourceManager<StateBinded> {
     pub fn compile(&mut self, folder: &str, output: &str) -> Result<()> {
         trace!("Start compiling sources");
+
         let mut paths = vec![];
+
         for (name, file) in &mut self.files {
             info!("Compiling `{}`", name);
             file.compile(folder)?;
@@ -121,16 +153,11 @@ impl SourceManager {
                 .to_owned();
             paths.push(name);
         }
+
         link_files(paths, output)
             .context(format!("After building all files needed for {}", output))?;
-        info!("Result saved into {}", output);
-        Ok(())
-    }
 
-    pub fn pretty(&self) -> Result<()> {
-        for (name, file) in &self.files {
-            std::println!("File {} AST is:\n{}", name, file.root);
-        }
+        info!("Result saved into {}", output);
         Ok(())
     }
 }

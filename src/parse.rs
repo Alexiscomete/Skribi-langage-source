@@ -10,12 +10,12 @@ use miette::{Diagnostic, LabeledSpan, Result, SourceSpan, miette};
 use string_interner::DefaultSymbol;
 use thiserror::Error;
 
-use crate::ast::nodes::FileTreeRoot;
 use crate::ast::nodes::binop::Binop;
 use crate::ast::nodes::calls::variable::VariableUsage;
 use crate::ast::nodes::declarations::variable::VariableDeclaration;
 use crate::ast::nodes::expressions::Expression::{self};
 use crate::ast::nodes::statements::Statement;
+use crate::ast::nodes::{FileTreeRoot, StateSimple};
 use crate::interner::INTERNER;
 use crate::lexer::Tokens;
 use crate::parse::call::{function_call_parser, native_parser};
@@ -134,7 +134,7 @@ where
 }
 
 fn root_parser<'tok, 'src: 'tok, I>()
--> impl Parser<'tok, I, FileTreeRoot, extra::Err<Rich<'tok, Tokens>>>
+-> impl Parser<'tok, I, FileTreeRoot<StateSimple>, extra::Err<Rich<'tok, Tokens>>>
 where
     I: ValueInput<'tok, Token = Tokens, Span = SimpleSpan>,
 {
@@ -142,7 +142,7 @@ where
         .repeated()
         .collect()
         .boxed()
-        .map(FileTreeRoot::new)
+        .map(FileTreeRoot::<StateSimple>::new)
 }
 
 fn error_symbol() -> Result<DefaultSymbol> {
@@ -196,7 +196,10 @@ fn convert_to_err(errs: Vec<Rich<'_, Tokens>>) -> ParsingErrors {
     }
 }
 
-pub fn parse(tokens: Vec<(Result<Tokens, ()>, Span)>, src_len: usize) -> Result<FileTreeRoot> {
+pub fn parse(
+    tokens: Vec<(Result<Tokens, ()>, Span)>,
+    src_len: usize,
+) -> Result<FileTreeRoot<StateSimple>> {
     // Greatly inspired by
     // https://codeberg.org/zesterer/chumsky/src/branch/main/examples/logos.rs
     // Converts from a logos format to a chumsky format
@@ -220,48 +223,48 @@ pub fn parse(tokens: Vec<(Result<Tokens, ()>, Span)>, src_len: usize) -> Result<
 #[cfg(test)]
 mod test {
     use crate::{lexer::tokenise, parse::parse};
-    use insta::{assert_compact_debug_snapshot, assert_debug_snapshot, assert_snapshot};
+    use insta::{assert_debug_snapshot, assert_snapshot};
 
     #[test]
     fn parse_skr_app() {
         let src = "skr_app";
         let tokens = tokenise(src).unwrap();
-        assert_compact_debug_snapshot!(parse(tokens, src.len()));
+        assert_snapshot!(parse(tokens, src.len()).unwrap());
     }
 
     #[test]
     fn parse_exit() {
         let src = "exit()";
         let tokens = tokenise(src).unwrap();
-        assert_compact_debug_snapshot!(parse(tokens, src.len()));
+        assert_snapshot!(parse(tokens, src.len()).unwrap());
     }
 
     #[test]
     fn parse_other() {
         let src = "other   () skr_app";
         let tokens = tokenise(src).unwrap();
-        assert_compact_debug_snapshot!(parse(tokens, src.len()));
+        assert_snapshot!(parse(tokens, src.len()).unwrap());
     }
 
     #[test]
     fn parse_number() {
         let src = "123 other   () skr_app 0";
         let tokens = tokenise(src).unwrap();
-        assert_debug_snapshot!(parse(tokens, src.len()));
+        assert_snapshot!(parse(tokens, src.len()).unwrap());
     }
 
     #[test]
     fn parse_argument() {
         let src = "123 other ( 2) 0";
         let tokens = tokenise(src).unwrap();
-        assert_debug_snapshot!("Simple argument number", parse(tokens, src.len()), src);
+        assert_snapshot!("Simple argument number", parse(tokens, src.len()).unwrap(), src);
     }
 
     #[test]
     fn parse_argument_2() {
         let src = "123 other ( exit ()) 0";
         let tokens = tokenise(src).unwrap();
-        assert_debug_snapshot!("Function as argument", parse(tokens, src.len()), src);
+        assert_snapshot!("Function as argument", parse(tokens, src.len()).unwrap(), src);
     }
 
     #[test]
@@ -279,9 +282,9 @@ mod test {
     fn parse_argument_4() {
         let src = "123 other ( exit ( 123)) 0";
         let tokens = tokenise(src).unwrap();
-        assert_debug_snapshot!(
+        assert_snapshot!(
             "Function as argument and int",
-            parse(tokens, src.len()),
+            parse(tokens, src.len()).unwrap(),
             src
         );
     }

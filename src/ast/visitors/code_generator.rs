@@ -2,12 +2,10 @@ use log::{debug, trace};
 use miette::{Context, IntoDiagnostic, Result};
 
 use crate::ast::nodes::binop::BinopEnum;
-use crate::ast::nodes::into_str;
+use crate::ast::nodes::{StateBinded, into_str};
 use crate::ast::visitors::code_generator::container::GeneratorContainer;
 use crate::ast::visitors::code_generator::store::Store;
-use crate::ast::visitors::code_generator::typing::{
-    GeneralValue, SimpleIntValue, to_fn_type,
-};
+use crate::ast::visitors::code_generator::typing::{GeneralValue, SimpleIntValue, to_fn_type};
 use crate::ast::{nodes::FileTreeRoot, visitors::AstMutVisitor};
 use crate::interner::get_interner;
 
@@ -24,7 +22,7 @@ pub struct CodeGenerator<'ctx, 'container> {
 }
 
 impl<'ctx, 'container> CodeGenerator<'ctx, 'container> {
-    pub fn compile(root: &FileTreeRoot, name: &str, folder: &str) -> Result<()> {
+    pub fn compile(root: &FileTreeRoot<StateBinded>, name: &str, folder: &str) -> Result<()> {
         GeneratorContainer::using(name, |container| {
             let mut compiler = CodeGenerator {
                 container,
@@ -46,7 +44,9 @@ impl<'ctx, 'container> CodeGenerator<'ctx, 'container> {
     }
 }
 
-impl<'ctx, 'container> AstMutVisitor<'_, GeneralValue<'ctx>> for CodeGenerator<'ctx, 'container> {
+impl<'ctx, 'container> AstMutVisitor<'_, GeneralValue<'ctx>, miette::Report, StateBinded>
+    for CodeGenerator<'ctx, 'container>
+{
     fn default_t(_: super::DefaultCause) -> miette::Result<GeneralValue<'static>, miette::Error> {
         Ok(None)
     }
@@ -55,6 +55,8 @@ impl<'ctx, 'container> AstMutVisitor<'_, GeneralValue<'ctx>> for CodeGenerator<'
         &mut self,
         function_call: &crate::ast::nodes::calls::functions::FunctionCall,
     ) -> Result<GeneralValue<'ctx>, miette::Error> {
+        self.main_empty = false;
+
         trace!("Compiling a function call");
 
         // Step 1, compile the arguments
@@ -63,21 +65,14 @@ impl<'ctx, 'container> AstMutVisitor<'_, GeneralValue<'ctx>> for CodeGenerator<'
         let args = self.default_function_call(function_call)?;
 
         // Step 2, call
-        let interner = get_interner()?;
-        let name = into_str(&interner, function_call.name);
-        match name {
-            "exit" => {
-                trace!("Found an exit call");
-                let arg = args.map_or_else(|| self.container.const_int(42).into(), |v| v.value);
-                self.container.build_exit_call(arg)?;
-                self.main_empty = false;
-                trace!("Function called");
-
-                Ok(None)
-            }
-            "println" => self.container.build_print_call(args),
-            _ => todo!("Cannot compile other functions for now"),
-        }
+        self.main_empty = false;
+        self.store.get_function(
+            args,
+            function_call
+                .declaration
+                .clone()
+                .wrap_err("Unbinded call")?,
+        )
     }
 
     fn visit_number(

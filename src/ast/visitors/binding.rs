@@ -9,9 +9,15 @@ use log::trace;
 use miette::{Diagnostic, Result, SourceSpan};
 use thiserror::Error;
 
-use crate::ast::{
-    nodes::{FileTreeRoot, SymbolWrapper, declarations::variable::VariableDeclarationRef},
-    visitors::MutAstMutVisitor,
+use crate::{
+    ast::{
+        nodes::{
+            FileTreeRoot, StateBinded, StateSimple, SymbolWrapper,
+            declarations::variable::VariableDeclarationRef,
+        },
+        visitors::MutAstMutVisitor,
+    },
+    bindings::DeclarationLink,
 };
 
 /// Allocation fast, free fast, however recursive search can cost
@@ -57,14 +63,18 @@ pub struct Binder {
 }
 
 impl Binder {
-    pub fn bind(root: &mut FileTreeRoot) -> Result<()> {
+    pub fn bind(mut root: FileTreeRoot<StateSimple>) -> Result<FileTreeRoot<StateBinded>> {
         let mut binder = Self::default();
         binder.root = Some(Scope::push(binder.root));
 
-        binder.visit_file_tree_root(root)?;
+        binder.visit_file_tree_root(&mut root)?;
 
         binder.root = Scope::pop(binder.root);
-        Ok(())
+
+        let mut new_root = FileTreeRoot::new(root.content);
+        new_root.file = root.file;
+
+        Ok(new_root)
     }
 }
 
@@ -146,6 +156,28 @@ impl MutAstMutVisitor<'_, ()> for Binder {
 
             Err(UndeclaredError {
                 name: name,
+                span: span.into_range().into(),
+            }
+            .into())
+        }
+    }
+
+    fn visit_function_call(
+        &mut self,
+        function_call: &mut crate::ast::nodes::calls::functions::FunctionCall,
+    ) -> Result<(), miette::Error> {
+        self.default_function_call(function_call)?;
+
+        let binding = DeclarationLink::get_stdlib_binding(function_call.name)?;
+
+        if let Some(binding) = binding {
+            function_call.declaration = Some(binding);
+            Ok(())
+        } else {
+            let span: SimpleSpan = function_call.try_into()?;
+
+            Err(UndeclaredError {
+                name: function_call.name,
                 span: span.into_range().into(),
             }
             .into())

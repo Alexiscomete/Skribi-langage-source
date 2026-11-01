@@ -1,5 +1,6 @@
 use std::{
     fmt::{Debug, Display, Error},
+    marker::PhantomData,
     sync::Arc,
 };
 
@@ -20,17 +21,21 @@ pub mod expressions;
 pub mod numbers;
 pub mod statements;
 
-#[derive(Debug)]
-pub struct FileTreeRoot {
+pub struct StateSimple;
+pub struct StateBinded;
+
+pub struct FileTreeRoot<T = StateSimple> {
     pub content: Vec<Statement>,
     pub file: Option<Arc<File>>,
+    state: PhantomData<T>,
 }
 
-impl FileTreeRoot {
-    pub fn new(content: Vec<Statement>) -> FileTreeRoot {
+impl<T> FileTreeRoot<T> {
+    pub fn new(content: Vec<Statement>) -> FileTreeRoot<T> {
         FileTreeRoot {
             content,
             file: None,
+            state: PhantomData::default(),
         }
     }
 }
@@ -75,5 +80,11 @@ impl Display for SymbolWrapper {
         })?;
         let name = interner.resolve(self.symbol).unwrap_or("ERROR");
         write!(f, "{}", name)
+    }
+}
+
+impl Debug for FileTreeRoot {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "FileTreeRoot({:?}, {:?})", self.content, self.file)
     }
 }

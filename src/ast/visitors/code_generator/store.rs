@@ -1,16 +1,21 @@
 use std::collections::HashMap;
 
 use log::debug;
-use miette::{Context, IntoDiagnostic};
+use miette::{Context, IntoDiagnostic, Result};
 
-use crate::ast::visitors::code_generator::{
-    container::GeneratorContainer,
-    typing::{SimplePointerValue, SimpleValue, Variable},
+use crate::{
+    ast::visitors::code_generator::{
+        container::GeneratorContainer,
+        stdlib_bindings::StdLibBinder,
+        typing::{GeneralValue, SimplePointerValue, SimpleValue, Variable},
+    },
+    bindings::DeclarationLink,
 };
 
 pub struct Store<'ctx, 'container> {
     container: &'container GeneratorContainer<'ctx>,
     var_values: HashMap<usize, Variable<'ctx>>,
+    stdlib_binder: StdLibBinder<'ctx, 'container>,
 }
 
 impl<'ctx, 'container> Store<'ctx, 'container> {
@@ -18,6 +23,7 @@ impl<'ctx, 'container> Store<'ctx, 'container> {
         Store {
             container,
             var_values: Default::default(),
+            stdlib_binder: StdLibBinder::new(container),
         }
     }
 
@@ -26,7 +32,7 @@ impl<'ctx, 'container> Store<'ctx, 'container> {
         variable_id: usize,
         content: SimpleValue<'ctx>,
         constant: bool,
-    ) -> Result<SimpleValue<'ctx>, miette::Error> {
+    ) -> Result<SimpleValue<'ctx>> {
         if constant {
             self.var_values
                 .insert(variable_id, Variable::SimpleValue(content.clone()));
@@ -60,7 +66,7 @@ impl<'ctx, 'container> Store<'ctx, 'container> {
         Ok(content)
     }
 
-    pub fn get_variable(&mut self, variable_id: usize) -> Result<SimpleValue<'ctx>, miette::Error> {
+    pub fn get_variable(&mut self, variable_id: usize) -> Result<SimpleValue<'ctx>> {
         let stored = self
             .var_values
             .get(&variable_id)
@@ -81,5 +87,15 @@ impl<'ctx, 'container> Store<'ctx, 'container> {
         }
     }
 
-    // - get function
+    pub fn get_function(
+        &mut self,
+        args: GeneralValue<'ctx>,
+        declaration: DeclarationLink,
+    ) -> Result<GeneralValue<'ctx>> {
+        match declaration {
+            DeclarationLink::Bindings(bindings) => {
+                self.stdlib_binder.get_stdlib_call(bindings, args)
+            }
+        }
+    }
 }

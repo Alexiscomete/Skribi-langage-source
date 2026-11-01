@@ -1,5 +1,5 @@
 ---
 source: src/parse.rs
-expression: "parse(tokens, src.len())"
+expression: "parse(tokens, src.len()).unwrap()"
 ---
-Ok(FileTreeRoot { content: [Deprecated(Deprecated { message: "skr_app should not be used", span: 0..7 })], file: None })
+DEPRECATED [skr_app should not be used]

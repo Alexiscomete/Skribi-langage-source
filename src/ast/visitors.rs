@@ -20,7 +20,6 @@
 //!
 //! Visitors are the heart of a compiler.
 
-use crate::ast::nodes::FileTreeRoot;
 use crate::ast::nodes::binop::Binop;
 use crate::ast::nodes::calls::functions::FunctionCall;
 use crate::ast::nodes::calls::variable::VariableUsage;
@@ -29,6 +28,7 @@ use crate::ast::nodes::deprecated::Deprecated;
 use crate::ast::nodes::expressions::Expression;
 use crate::ast::nodes::numbers::Number;
 use crate::ast::nodes::statements::Statement;
+use crate::ast::nodes::{FileTreeRoot, StateSimple};
 use miette::Result;
 
 pub mod binding;
@@ -68,7 +68,7 @@ macro_rules! make_ast_visitor {
         /// - AstMutVisitor for mutable visitor
         /// - MutAstMutVisitor for both mutable
         #[allow(dead_code)]
-        pub trait $trait_name<'life, T, R = miette::Error> {
+        pub trait $trait_name<'life, T, R = miette::Error, E = StateSimple> {
             /// Called if returning a default value is needed.
             /// Considere it lazy: you can throw an exception
             /// if it should never be reached.
@@ -82,14 +82,14 @@ macro_rules! make_ast_visitor {
 
             fn visit_file_tree_root(
                 &$($self_mutable)? self,
-                file_tree_root: &$($mutable)? FileTreeRoot,
+                file_tree_root: &$($mutable)? FileTreeRoot<E>,
             ) -> Result<T, R> {
                 self.default_file_tree_root(file_tree_root)
             }
 
             fn default_file_tree_root(
                 &$($self_mutable)? self,
-                file_tree_root: &$($mutable)? FileTreeRoot,
+                file_tree_root: &$($mutable)? FileTreeRoot<E>,
             ) -> Result<T, R> {
                 let mut res = None;
                 for statement in &$($mutable)? file_tree_root.content {

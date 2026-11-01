@@ -6,6 +6,8 @@
 
 /// This module is used to store ast structs
 mod ast;
+/// Manage bindings between code and the stdlib or runtime
+mod bindings;
 /// Arguments of the main program
 mod cli;
 /// This module handles reading from inputs

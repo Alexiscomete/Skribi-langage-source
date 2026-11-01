@@ -5,7 +5,8 @@ use miette::{Result, miette};
 
 use crate::ast::{
     nodes::{
-        calls::variable::VariableUsage, declarations::variable::VariableDeclarationRef,
+        calls::{functions::FunctionCall, variable::VariableUsage},
+        declarations::variable::VariableDeclarationRef,
         statements::Statement,
     },
     visitors::AstVisitor,
@@ -86,5 +87,14 @@ impl TryFrom<&mut VariableUsage> for SimpleSpan {
     fn try_from(value: &mut VariableUsage) -> Result<Self> {
         let visitor = IntoSpanVisitor {};
         visitor.visit_variable_usage(value)
+    }
+}
+
+impl TryFrom<&mut FunctionCall> for SimpleSpan {
+    type Error = miette::ErrReport;
+
+    fn try_from(value: &mut FunctionCall) -> Result<Self> {
+        let visitor = IntoSpanVisitor {};
+        visitor.visit_function_call(value)
     }
 }
